@@ -2,20 +2,48 @@ import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const Mechanics = () => {
-    const mapRef = useRef(null);
-    const mapContainer = useRef(null);
+// Initialize the map
+const map = L.map('map').setView([0, 0], 13); // Default center
 
-    useEffect(() => {
-        if (!mapRef.current && mapContainer.current) {
-            mapRef.current = L.map(mapContainer.current).setView([51.505, -0.09], 13);
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(mapRef.current);
-        } else if (mapRef.current) {
-            mapRef.current.invalidateSize(); // Ensure correct rendering
-        }
-    }, []);
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+// Ask user for location access
+if (confirm("Do you want to share your location?")) {
+    map.locate({ setView: true, maxZoom: 16 });
+}
+
+// Event listener for successful location detection
+map.on('locationfound', function(e) {
+    const userLocation = e.latlng;
+    L.marker(userLocation).addTo(map)
+      .bindPopup("You are here!").openPopup();
+    
+    console.log("User location:", userLocation);
+});
+
+// Event listener for location errors
+map.on('locationerror', function(e) {
+    alert("Location access denied or unavailable.");
+    console.error(e.message);
+});
+
+// Manual pin-drop option
+let manualMarker;
+map.on('click', function(e) {
+    if (manualMarker) {
+        map.removeLayer(manualMarker); // Remove previous pin if any
+    }
+    
+    manualMarker = L.marker(e.latlng, { draggable: true }).addTo(map)
+        .bindPopup("Pinned Location")
+        .openPopup();
+    
+    console.log("Manual pin location:", e.latlng);
+});
+
 
     return (
         <div className="container d-flex flex-column align-items-center justify-content-center mt-4">
@@ -32,6 +60,5 @@ const Mechanics = () => {
             </div>
         </div>
     );
-};
 
 export default Mechanics;
