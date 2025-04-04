@@ -1,31 +1,68 @@
 body {
-  background: linear-gradient(to right, ffffff, f8f9fa);
+  background: linear-gradient(to right, #ffffff, #f8f9fa); /* Fixed missing # before color codes */
   font-family: "Arial", sans-serif;
   padding-top: 20px;
+  margin: 0; /* Reset default margin */
 }
 
 .container {
   max-width: 1000px;
+  width: 100%; /* Ensure it uses full width up to max-width */
+  margin: 0 auto; /* Center the container */
+  padding: 0 15px; /* Add some padding on smaller screens */
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
 .card {
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%; /* Make cards use full width of their container */
+  margin-bottom: 20px; /* Add some spacing between cards */
 }
 
 .map-container {
   height: 500px;
-  width: 90%;
+  width: 100%; /* Use full width of parent */
   max-width: 800px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin: 0 auto; /* Center this element */
 }
 
 .navbar {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%; /* Ensure navbar uses full width */
 }
 
 h2 {
   font-weight: bold;
   margin-bottom: 20px;
+}
+
+/* Add responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+}
+
+/* Form specific styling */
+form {
+  width: 100%;
+}
+
+input[type="text"], 
+input[type="email"],
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+.btn-submit {
+  padding: 10px 20px;
+  border-radius: 5px;
 }
