@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 
 const Diagnose = () => {
   const [problem, setProblem] = useState("");
   const [diagnosisSubmitted, setDiagnosisSubmitted] = useState(false);
   const [diagnosis, setDiagnosis] = useState("");
+  const navigate = useNavigate(); // Initialize the navigate function
   
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -40,6 +42,11 @@ const Diagnose = () => {
     setDiagnosisSubmitted(false);
     setDiagnosis("");
     alert("Great! We're glad your issue is resolved.");
+  };
+  
+  const handleShowMechanicsMap = () => {
+    // Navigate to the MechanicsMap page
+    navigate('/mechanics');
   };
   
   return (
@@ -80,7 +87,7 @@ const Diagnose = () => {
                   <h5>What would you like to do next?</h5>
                   <div className="d-grid gap-3 mt-4">
                     <div className="row">
-                      <div className="col-md-4 mb-2">
+                      <div className="col-md-3 mb-2">
                         <button 
                           onClick={handleCallMechanic} 
                           className="btn btn-primary w-100"
@@ -89,7 +96,7 @@ const Diagnose = () => {
                           Call a Mechanic
                         </button>
                       </div>
-                      <div className="col-md-4 mb-2">
+                      <div className="col-md-3 mb-2">
                         <button 
                           onClick={handleCallTowing} 
                           className="btn btn-warning w-100"
@@ -98,7 +105,16 @@ const Diagnose = () => {
                           Call Towing
                         </button>
                       </div>
-                      <div className="col-md-4 mb-2">
+                      <div className="col-md-3 mb-2">
+                        <button 
+                          onClick={handleShowMechanicsMap}
+                          className="btn btn-info w-100 text-white"
+                        >
+                          <i className="bi bi-map me-2"></i>
+                          Mechanics Map
+                        </button>
+                      </div>
+                      <div className="col-md-3 mb-2">
                         <button 
                           onClick={handleIssueFixed} 
                           className="btn btn-success w-100"

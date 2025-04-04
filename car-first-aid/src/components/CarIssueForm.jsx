@@ -128,4 +128,4 @@ const Diagnose = () => {
   );
 };
 
-export default Diagnose;
+export default Diagnose; 
