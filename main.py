@@ -4,7 +4,6 @@ import openai
 
 app = FastAPI()
 
-openai.api_key = "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"
 
 class Query(BaseModel):
     query: str
