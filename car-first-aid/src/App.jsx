@@ -55,20 +55,20 @@ const App = () => {
           <footer className="mt-12 py-6 bg-gray-800 text-white">
             <div className="container mx-auto text-center">
               <div className="flex justify-center space-x-6 mb-4">
-                <a href="#" className="hover:text-orange-500">
+                <a href="  " className="hover:text-orange-500">
                   <i className="fas fa-car text-xl"></i>
                 </a>
-                <a href="#" className="hover:text-orange-500">
+                <a href="  " className="hover:text-orange-500">
                   <i className="fas fa-tools text-xl"></i>
                 </a>
-                <a href="#" className="hover:text-orange-500">
+                <a href="  " className="hover:text-orange-500">
                   <i className="fas fa-shopping-cart text-xl"></i>
                 </a>
               </div>
               <p className="text-sm">
                 © 2025 CarFirstAid. All rights reserved. | 
-                <a href="#" className="ml-2 hover:text-orange-500">Terms</a> | 
-                <a href="#" className="ml-2 hover:text-orange-500">Privacy</a>
+                <a href="  " className="ml-2 hover:text-orange-500">Terms</a> | 
+                <a href="  " className="ml-2 hover:text-orange-500">Privacy</a>
               </p>
             </div>
           </footer>
