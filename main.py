@@ -1,39 +1,21 @@
-import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
-from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
+import openai
 
- Load environment variables
-load_dotenv()
-
-MONGO_URI = os.getenv("MONGO_URI")
-DATABASE_NAME = os.getenv("DATABASE_NAME")
-COLLECTION_NAME = os.getenv("COLLECTION_NAME")
-
- Initialize FastAPI
 app = FastAPI()
 
- Connect to MongoDB
-client = AsyncIOMotorClient(MONGO_URI)
-db = client[DATABASE_NAME]
-collection = db[COLLECTION_NAME]
+openai.api_key = "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"
 
- Define Pydantic Model
-class CarIssue(BaseModel):
-    issue: str
-    solution: str
+class Query(BaseModel):
+    query: str
 
- Insert troubleshooting data into MongoDB
-@app.post("/add_issue")
-async def add_issue(car_issue: CarIssue):
-    result = await collection.insert_one(car_issue.dict())
-    return {"message": "Issue added successfully", "id": str(result.inserted_id)}
-
- Get solution from MongoDB
-@app.get("/troubleshoot/{issue}")
-async def get_solution(issue: str):
-    result = await collection.find_one({"issue": issue.lower()})
-    if result:
-        return {"solution": result["solution"]}
-    raise HTTPException(status_code=404, detail="Solution not found")
+@app.post("/diagnose")
+async def diagnose_car(query: Query):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are an expert car mechanic AI."},
+            {"role": "user", "content": f"My car is having this issue: {query.query}"}
+        ]
+    )
+    return {"answer": response.choices[0].message["content"]}
