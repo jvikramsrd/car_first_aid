@@ -1,9 +1,104 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../utils/axios';
 
-export const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export const useAuth = () => {
+// Auth Provider Component
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      
+      const response = await axiosInstance.get('/auth/me');
+      if (response.data.success) {
+        setUser(response.data.user);
+      } else {
+        localStorage.removeItem('token');
+      }
+    } catch (err) {
+      console.error('Auth check failed:', err);
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      setError(null);
+      const response = await axiosInstance.post('/auth/login', { email, password });
+      
+      if (response.data.success) {
+        const { token, user } = response.data;
+        localStorage.setItem('token', token);
+        setUser(user);
+        return true;
+      } else {
+        setError(response.data.message || 'Login failed');
+        return false;
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred during login');
+      return false;
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      setError(null);
+      const response = await axiosInstance.post('/auth/register', userData);
+      
+      if (response.data.success) {
+        const { token, user } = response.data;
+        localStorage.setItem('token', token);
+        setUser(user);
+        return true;
+      } else {
+        setError(response.data.message || 'Registration failed');
+        return false;
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred during registration');
+      return false;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
+
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    logout,
+    register,
+    checkAuth
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+}
+
+// Custom hook for using auth context
+const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -11,58 +106,4 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check for existing session on initial load
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  const login = async (email, password) => {
-    try {
-      // TODO: Connect to backend API
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include' // Important for cookies
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        setUser(data);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(data));
-        navigate('/');
-      } else {
-        throw new Error(data.message || 'Login failed');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+export { AuthProvider, useAuth };

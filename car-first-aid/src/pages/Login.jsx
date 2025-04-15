@@ -1,145 +1,139 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 
 const Login = () => {
-  const [isRegister, setIsRegister] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState(null);
-  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { login, error: authError } = useAuth();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    rememberMe: false
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    try {
-      await axios.post('/api/auth/register', {
-        name,
-        email,
-        password
-      });
-      toast.success('Registration successful! Please login');
-      setIsRegister(false);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
-    }
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    // Clear error when user starts typing
+    if (error) setError(null);
   };
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      await login(email, password);
-      navigate('/');
-      toast.success('Logged in successfully');
+      const success = await login(formData.email, formData.password);
+      if (success) {
+        toast.success('Logged in successfully!');
+        navigate('/');
+      } else {
+        setError(authError || 'Login failed');
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed');
+      setError('An error occurred during login');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="flex justify-center space-x-4">
-          <button
-            onClick={() => setIsRegister(false)}
-            className={`px-4 py-2 rounded-md ${!isRegister ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setIsRegister(true)}
-            className={`px-4 py-2 rounded-md ${isRegister ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-          >
-            Register
-          </button>
-        </div>
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isRegister ? 'Create new account' : 'Sign in to your account'}
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={isRegister ? handleRegister : handleLogin}>
-          {isRegister && (
-            <div>
-              <label htmlFor="name" className="sr-only">Name</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="w-full max-w-md">
+        <div className="bg-gray-800/80 backdrop-blur-md p-8 rounded-xl shadow-lg border border-gray-700">
+          <h1 className="text-3xl font-bold mb-6 text-center text-white">
+            Welcome Back
+          </h1>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-300 p-4 rounded-xl mb-6">
+              {error}
             </div>
           )}
-          <div className="rounded-md shadow-sm space-y-4">
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">
+                Email Address
+              </label>
               <input
+                type="email"
                 id="email"
                 name="email"
-                type="email"
-                autoComplete="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-white placeholder-gray-400"
+                placeholder="Enter your email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-200 mb-2">
+                Password
+              </label>
               <input
+                type="password"
                 id="password"
                 name="password"
-                type="password"
-                autoComplete={isRegister ? "new-password" : "current-password"}
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-white placeholder-gray-400"
+                placeholder="Enter your password"
                 required
-                minLength="6"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            {isRegister && (
-              <div>
-                <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength="6"
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Confirm Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
 
-          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  name="rememberMe"
+                  checked={formData.rememberMe}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded border-gray-700 text-blue-600 focus:ring-blue-400/20"
+                />
+                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-200">
+                  Remember me
+                </label>
+              </div>
+              <Link 
+                to="/forgot-password" 
+                className="text-sm text-blue-400 hover:text-blue-300"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors duration-300 disabled:opacity-50"
             >
-              {isRegister ? 'Register' : 'Sign in'}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-200">
+              Don't have an account?{" "}
+              <Link 
+                to="/register" 
+                className="text-blue-400 hover:text-blue-300 font-medium"
+              >
+                Sign up
+              </Link>
+            </p>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

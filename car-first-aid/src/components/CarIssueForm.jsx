@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FaWrench, FaTruck, FaCheckCircle, FaCarCrash } from "react-icons/fa";
 
 const Diagnose = () => {
   const [problem, setProblem] = useState("");
@@ -43,86 +44,80 @@ const Diagnose = () => {
   };
   
   return (
-    <div className="container py-4">
-      <div className="row justify-content-center">
-        <div className="col-md-8">
-          <div className="card shadow">
-            <div className="card-body">
-              <h2 className="card-title mb-4">🔍 Diagnose Your Car Issue</h2>
-              
-              {!diagnosisSubmitted ? (
-                <form onSubmit={handleSubmit}>
-                  <div className="mb-3">
-                    <label htmlFor="problemInput" className="form-label">
-                      What seems to be the problem?
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="problemInput"
-                      placeholder="E.g., Engine noise"
-                      value={problem}
-                      onChange={(e) => setProblem(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-success">
-                    Submit
-                  </button>
-                </form>
-              ) : (
-                <div>
-                  <div className="alert alert-info mb-4">
-                    <h5>Diagnosis:</h5>
-                    <p>{diagnosis}</p>
-                  </div>
-                  
-                  <h5>What would you like to do next?</h5>
-                  <div className="d-grid gap-3 mt-4">
-                    <div className="row">
-                      <div className="col-md-4 mb-2">
-                        <button 
-                          onClick={handleCallMechanic} 
-                          className="btn btn-primary w-100"
-                        >
-                          <i className="bi bi-wrench me-2"></i>
-                          Call a Mechanic
-                        </button>
-                      </div>
-                      <div className="col-md-4 mb-2">
-                        <button 
-                          onClick={handleCallTowing} 
-                          className="btn btn-warning w-100"
-                        >
-                          <i className="bi bi-truck me-2"></i>
-                          Call Towing
-                        </button>
-                      </div>
-                      <div className="col-md-4 mb-2">
-                        <button 
-                          onClick={handleIssueFixed} 
-                          className="btn btn-success w-100"
-                        >
-                          <i className="bi bi-check-circle me-2"></i>
-                          Issue Fixed
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-center mt-4">
-                    <button 
-                      onClick={() => setDiagnosisSubmitted(false)} 
-                      className="btn btn-outline-secondary"
-                    >
-                      Diagnose a different issue
-                    </button>
-                  </div>
-                </div>
-              )}
+    <div className="max-w-3xl mx-auto p-4">
+      <div className="bg-surface/80 backdrop-blur-md rounded-xl shadow-lg border border-primary/20 p-6">
+        <div className="flex items-center mb-6">
+          <FaCarCrash className="text-primary text-2xl mr-3" />
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Diagnose Your Car Issue
+          </h2>
+        </div>
+        
+        {!diagnosisSubmitted ? (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="problemInput" className="block text-sm font-medium text-text-secondary mb-2">
+                What seems to be the problem?
+              </label>
+              <input
+                type="text"
+                className="w-full px-4 py-2 rounded-lg bg-surface border border-primary/20 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
+                id="problemInput"
+                placeholder="E.g., Engine noise, strange sound, warning light..."
+                value={problem}
+                onChange={(e) => setProblem(e.target.value)}
+                required
+              />
+            </div>
+            <button 
+              type="submit" 
+              className="w-full px-4 py-2 rounded-lg bg-success text-white font-medium hover:bg-success/80 transition-colors duration-300"
+            >
+              Submit
+            </button>
+          </form>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-primary/10 border-l-4 border-primary p-4 rounded-lg">
+              <h5 className="text-primary font-medium mb-2">Diagnosis:</h5>
+              <p className="text-text">{diagnosis}</p>
+            </div>
+            
+            <h5 className="text-text font-medium">What would you like to do next?</h5>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button 
+                onClick={handleCallMechanic} 
+                className="flex items-center justify-center px-4 py-3 rounded-lg bg-primary text-white hover:bg-primary/80 transition-colors duration-300"
+              >
+                <FaWrench className="mr-2" />
+                Call a Mechanic
+              </button>
+              <button 
+                onClick={handleCallTowing} 
+                className="flex items-center justify-center px-4 py-3 rounded-lg bg-warning text-white hover:bg-warning/80 transition-colors duration-300"
+              >
+                <FaTruck className="mr-2" />
+                Call Towing
+              </button>
+              <button 
+                onClick={handleIssueFixed} 
+                className="flex items-center justify-center px-4 py-3 rounded-lg bg-success text-white hover:bg-success/80 transition-colors duration-300"
+              >
+                <FaCheckCircle className="mr-2" />
+                Issue Fixed
+              </button>
+            </div>
+            
+            <div className="text-center">
+              <button 
+                onClick={() => setDiagnosisSubmitted(false)} 
+                className="px-4 py-2 rounded-lg border border-primary/20 text-text-secondary hover:text-primary hover:border-primary transition-colors duration-300"
+              >
+                Diagnose a different issue
+              </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
