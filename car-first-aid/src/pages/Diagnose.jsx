@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { FaCarCrash, FaTools, FaTruck, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import { FaCarCrash, FaTools, FaTruck, FaCheckCircle, FaExclamationTriangle, FaBolt, FaThermometerHalf, FaCog, FaQuestion } from "react-icons/fa";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const commonIssues = [
-  { id: 1, name: "Engine won't start", icon: <FaCarCrash className="text-xl text-blue-400" /> },
-  { id: 2, name: "Strange noises", icon: <FaCarCrash className="text-xl text-blue-400" /> },
-  { id: 3, name: "Warning lights", icon: <FaExclamationTriangle className="text-xl text-blue-400" /> },
-  { id: 4, name: "Brake problems", icon: <FaCarCrash className="text-xl text-blue-400" /> },
-  { id: 5, name: "Battery issues", icon: <FaCarCrash className="text-xl text-blue-400" /> },
-  { id: 6, name: "Overheating", icon: <FaCarCrash className="text-xl text-blue-400" /> },
-  { id: 7, name: "Transmission issues", icon: <FaCarCrash className="text-xl text-blue-400" /> },
-  { id: 8, name: "Other issue", icon: <FaCarCrash className="text-xl text-blue-400" /> }
+  { id: 1, name: "ENGINE WON'T START", icon: <FaCarCrash className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> },
+  { id: 2, name: "STRANGE NOISES", icon: <FaCog className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> },
+  { id: 3, name: "WARNING LIGHTS", icon: <FaExclamationTriangle className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> },
+  { id: 4, name: "BRAKE PROBLEMS", icon: <FaTools className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> },
+  { id: 5, name: "BATTERY ISSUES", icon: <FaBolt className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> },
+  { id: 6, name: "OVERHEATING", icon: <FaThermometerHalf className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> },
+  { id: 7, name: "TRANSMISSION ISSUES", icon: <FaCog className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> },
+  { id: 8, name: "OTHER ISSUE", icon: <FaQuestion className="text-3xl text-blue-400 group-hover:text-blue-300 transition-colors duration-300" /> }
 ];
 
 const Diagnose = () => {
@@ -116,22 +116,25 @@ const Diagnose = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-[#111827]">
       <div className="container mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold mb-8 text-center text-white">
-          Car Diagnosis
+        <h1 className="text-5xl font-bold mb-12 text-center">
+          <span className="text-white">Car</span>
+          <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent"> Diagnosis</span>
         </h1>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-300 p-4 rounded-xl mb-6">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-300 p-4 rounded-xl mb-8 backdrop-blur-md">
             {error}
           </div>
         )}
 
         {step === 1 && (
-          <div className="bg-gray-800/80 backdrop-blur-md p-8 rounded-xl shadow-lg border border-gray-700">
-            <h2 className="text-2xl font-semibold mb-6 text-white">Select Your Issue</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-[#1f2937]/80 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-gray-700/50">
+            <h2 className="text-3xl font-bold mb-8 text-blue-100 text-center">
+              Select Your Issue
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {commonIssues.map(issue => (
                 <button
                   key={issue.id}
@@ -139,10 +142,14 @@ const Diagnose = () => {
                     setSelectedIssue(issue);
                     setStep(2);
                   }}
-                  className="flex items-center justify-center gap-3 p-4 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-blue-400/30 transition-all duration-300"
+                  className="group flex flex-col items-center gap-4 p-6 rounded-xl bg-[#1a2332] hover:bg-[#1e293b] border border-gray-700/50 hover:border-blue-400/30 transition-all duration-300 transform hover:-translate-y-1"
                 >
-                  {issue.icon}
-                  <span className="text-gray-200">{issue.name}</span>
+                  <div className="p-4 rounded-full bg-[#111827] group-hover:bg-[#1a2332] transition-colors duration-300">
+                    {issue.icon}
+                  </div>
+                  <span className="text-lg font-semibold text-blue-100 group-hover:text-blue-300 text-center transition-colors duration-300">
+                    {issue.name}
+                  </span>
                 </button>
               ))}
             </div>
@@ -150,52 +157,68 @@ const Diagnose = () => {
         )}
 
         {step === 2 && (
-          <div className="bg-gray-800/80 backdrop-blur-md p-8 rounded-xl shadow-lg border border-gray-700">
-            <h2 className="text-2xl font-semibold mb-6 text-white">Describe Your Problem</h2>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#1f2937]/80 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-gray-700/50">
+            <h2 className="text-3xl font-bold mb-8 text-blue-100 text-center">
+              Describe Your Problem
+            </h2>
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input
                   type="text"
                   placeholder="Car Make"
                   value={carDetails.make}
                   onChange={(e) => setCarDetails({ ...carDetails, make: e.target.value })}
-                  className="p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-white placeholder-gray-400"
+                  className="p-4 rounded-xl bg-[#1a2332] border border-gray-700/50 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-blue-100 placeholder-gray-400"
                 />
                 <input
                   type="text"
                   placeholder="Car Model"
                   value={carDetails.model}
                   onChange={(e) => setCarDetails({ ...carDetails, model: e.target.value })}
-                  className="p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-white placeholder-gray-400"
+                  className="p-4 rounded-xl bg-[#1a2332] border border-gray-700/50 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-blue-100 placeholder-gray-400"
                 />
                 <input
                   type="text"
                   placeholder="Year"
                   value={carDetails.year}
                   onChange={(e) => setCarDetails({ ...carDetails, year: e.target.value })}
-                  className="p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-white placeholder-gray-400"
+                  className="p-4 rounded-xl bg-[#1a2332] border border-gray-700/50 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 text-blue-100 placeholder-gray-400"
                 />
               </div>
               <textarea
                 placeholder="Describe your car problem in detail..."
                 value={problemDetails}
                 onChange={(e) => setProblemDetails(e.target.value)}
-                className="w-full p-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 min-h-[150px] text-white placeholder-gray-400"
+                className="w-full p-4 rounded-xl bg-[#1a2332] border border-gray-700/50 focus:border-blue-400/30 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 min-h-[200px] text-blue-100 placeholder-gray-400"
               />
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={() => handleDiagnose(false)}
                   disabled={loading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300 disabled:opacity-50"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 disabled:opacity-50 transform hover:-translate-y-1"
                 >
-                  {loading ? "Diagnosing..." : "Diagnose"}
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                      <span>Diagnosing...</span>
+                    </div>
+                  ) : (
+                    "Standard Diagnosis"
+                  )}
                 </button>
                 <button
                   onClick={() => handleDiagnose(true)}
                   disabled={loading}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-xl border border-gray-700 hover:border-blue-400/30 transition-all duration-300 disabled:opacity-50"
+                  className="flex-1 bg-[#1a2332] hover:bg-[#1e293b] text-blue-100 font-bold py-4 px-8 rounded-xl border border-gray-700/50 hover:border-blue-400/30 transition-all duration-300 disabled:opacity-50 transform hover:-translate-y-1"
                 >
-                  {loading ? "Analyzing..." : "AI Diagnosis"}
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-400"></div>
+                      <span>Analyzing...</span>
+                    </div>
+                  ) : (
+                    "AI-Powered Diagnosis"
+                  )}
                 </button>
               </div>
             </div>
@@ -203,43 +226,57 @@ const Diagnose = () => {
         )}
 
         {step === 3 && diagnosis && (
-          <div className="bg-gray-800/80 backdrop-blur-md p-8 rounded-xl shadow-lg border border-gray-700">
-            <h2 className="text-2xl font-semibold mb-6 text-white">Diagnosis Results</h2>
+          <div className="bg-[#1f2937]/80 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-gray-700/50">
+            <h2 className="text-3xl font-bold mb-8 text-blue-100 text-center">
+              Diagnosis Results
+            </h2>
             <div className="space-y-6">
-              <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                <h3 className="text-xl font-semibold mb-4 text-white">Problem</h3>
-                <p className="text-gray-200">{diagnosis.problem}</p>
+              <div className="bg-[#1a2332] p-6 rounded-xl border border-gray-700/50">
+                <h3 className="text-xl font-semibold mb-4 text-blue-100">Problem</h3>
+                <p className="text-blue-200">{diagnosis.problem}</p>
               </div>
-              <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                <h3 className="text-xl font-semibold mb-4 text-white">Possible Causes</h3>
-                <ul className="list-disc list-inside space-y-2 text-gray-200">
+              <div className="bg-[#1a2332] p-6 rounded-xl border border-gray-700/50">
+                <h3 className="text-xl font-semibold mb-4 text-blue-100">Possible Causes</h3>
+                <ul className="list-none space-y-3">
                   {diagnosis.causes.map((cause, index) => (
-                    <li key={index}>{cause}</li>
+                    <li key={index} className="flex items-start gap-3 text-blue-200">
+                      <div className="mt-1 text-blue-400">•</div>
+                      {cause}
+                    </li>
                   ))}
                 </ul>
               </div>
-              <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                <h3 className="text-xl font-semibold mb-4 text-white">Recommended Solutions</h3>
-                <ul className="list-disc list-inside space-y-2 text-gray-200">
+              <div className="bg-[#1a2332] p-6 rounded-xl border border-gray-700/50">
+                <h3 className="text-xl font-semibold mb-4 text-blue-100">Recommended Solutions</h3>
+                <ul className="list-none space-y-3">
                   {diagnosis.solutions.map((solution, index) => (
-                    <li key={index}>{solution}</li>
+                    <li key={index} className="flex items-start gap-3 text-blue-200">
+                      <div className="mt-1">
+                        <FaCheckCircle className="text-blue-400" />
+                      </div>
+                      {solution}
+                    </li>
                   ))}
                 </ul>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button
                   onClick={() => handleServiceRequest('mechanic')}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:-translate-y-1"
                 >
-                  <FaTools className="inline-block mr-2" />
-                  Call Mechanic
+                  <div className="flex items-center justify-center gap-2">
+                    <FaTools className="text-xl" />
+                    <span>Call Mechanic</span>
+                  </div>
                 </button>
                 <button
                   onClick={() => handleServiceRequest('towing')}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-xl border border-gray-700 hover:border-blue-400/30 transition-all duration-300"
+                  className="flex-1 bg-[#1a2332] hover:bg-[#1e293b] text-blue-100 font-bold py-4 px-8 rounded-xl border border-gray-700/50 hover:border-blue-400/30 transition-all duration-300 transform hover:-translate-y-1"
                 >
-                  <FaTruck className="inline-block mr-2" />
-                  Request Tow
+                  <div className="flex items-center justify-center gap-2">
+                    <FaTruck className="text-xl" />
+                    <span>Request Tow</span>
+                  </div>
                 </button>
               </div>
             </div>

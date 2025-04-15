@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, error: authError } = useAuth();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,7 +56,7 @@ const Register = () => {
     setError(null);
 
     try {
-      const success = await register({
+      const response = await axios.post('/api/auth/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -63,14 +64,16 @@ const Register = () => {
         role: formData.role
       });
 
-      if (success) {
+      if (response.data.success) {
         toast.success('Registration successful!');
+        // Log the user in automatically
+        await login(formData.email, formData.password);
         navigate('/');
       } else {
-        setError(authError || 'Registration failed');
+        setError(response.data.message || 'Registration failed');
       }
     } catch (err) {
-      setError('An error occurred during registration');
+      setError(err.response?.data?.message || 'An error occurred during registration');
     } finally {
       setLoading(false);
     }

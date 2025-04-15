@@ -1,7 +1,16 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import axiosInstance from '../utils/axios';
+import axios from 'axios';
 
 const AuthContext = createContext(null);
+
+// Custom hook for using auth context
+function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
 
 // Auth Provider Component
 function AuthProvider({ children }) {
@@ -20,16 +29,21 @@ function AuthProvider({ children }) {
         setLoading(false);
         return;
       }
+
+      // Set default authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      const response = await axiosInstance.get('/auth/me');
+      const response = await axios.get('/api/auth/me');
       if (response.data.success) {
         setUser(response.data.user);
       } else {
         localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
       }
     } catch (err) {
       console.error('Auth check failed:', err);
       localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
     } finally {
       setLoading(false);
     }
@@ -38,11 +52,12 @@ function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       setError(null);
-      const response = await axiosInstance.post('/auth/login', { email, password });
+      const response = await axios.post('/api/auth/login', { email, password });
       
       if (response.data.success) {
         const { token, user } = response.data;
         localStorage.setItem('token', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         setUser(user);
         return true;
       } else {
@@ -55,28 +70,9 @@ function AuthProvider({ children }) {
     }
   };
 
-  const register = async (userData) => {
-    try {
-      setError(null);
-      const response = await axiosInstance.post('/auth/register', userData);
-      
-      if (response.data.success) {
-        const { token, user } = response.data;
-        localStorage.setItem('token', token);
-        setUser(user);
-        return true;
-      } else {
-        setError(response.data.message || 'Registration failed');
-        return false;
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during registration');
-      return false;
-    }
-  };
-
   const logout = () => {
     localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
   };
 
@@ -86,7 +82,6 @@ function AuthProvider({ children }) {
     error,
     login,
     logout,
-    register,
     checkAuth
   };
 
@@ -96,14 +91,5 @@ function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
-// Custom hook for using auth context
-const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
 
 export { AuthProvider, useAuth };

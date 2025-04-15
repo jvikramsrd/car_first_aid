@@ -29,8 +29,8 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center group">
-              <FaCar className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors duration-300" />
-              <span className="ml-2 text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <FaCar className="h-6 w-6 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
+              <span className="ml-2 text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
                 CarFirstAid
               </span>
             </Link>
