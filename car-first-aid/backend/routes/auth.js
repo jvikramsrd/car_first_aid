@@ -9,13 +9,16 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', async (req, res, next) => {
+// @route   POST /api/auth/login
+router.post('/login', async (req, res, next) => {
   try {
     await authUser(req, res);
   } catch (error) {
     next(error);
   }
 });
+
+// @route   POST /api/auth/register
 router.post('/register', async (req, res, next) => {
   try {
     await registerUser(req, res);
@@ -23,7 +26,11 @@ router.post('/register', async (req, res, next) => {
     next(error);
   }
 });
+
+// @route   POST /api/auth/logout
 router.post('/logout', logoutUser);
+
+// @route   GET /api/auth/profile
 router.route('/profile')
   .get(protect, getUserProfile);
 
