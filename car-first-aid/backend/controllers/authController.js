@@ -1,5 +1,6 @@
 import User from '../models/user.js';
 import generateToken from '../utils/generateToken.js';
+import jwt from 'jsonwebtoken';
 
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
@@ -18,7 +19,9 @@ const authUser = async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (user && (await user.matchPassword(password))) {
-      generateToken(res, user._id);
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '30d'
+      });
       
       res.json({
         success: true,
@@ -27,7 +30,8 @@ const authUser = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role
-        }
+        },
+        token
       });
     } else {
       res.status(401).json({
@@ -36,6 +40,7 @@ const authUser = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({
       success: false,
       message: 'Login failed',
@@ -86,7 +91,9 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
-      generateToken(res, user._id);
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '30d'
+      });
       
       res.status(201).json({
         success: true,
@@ -95,7 +102,8 @@ const registerUser = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role
-        }
+        },
+        token
       });
     } else {
       res.status(400).json({
@@ -104,6 +112,7 @@ const registerUser = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error('Registration error:', error);
     // Handle mongoose validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
@@ -122,29 +131,6 @@ const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Logout user / clear cookie
-// @route   POST /api/auth/logout
-// @access  Public
-const logoutUser = (req, res) => {
-  try {
-    res.cookie('jwt', '', {
-      httpOnly: true,
-      expires: new Date(0)
-    });
-    
-    res.status(200).json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Logout failed',
-      error: error.message
-    });
-  }
-};
-
 // @desc    Get user profile
 // @route   GET /api/auth/profile
 // @access  Private
@@ -155,7 +141,12 @@ const getUserProfile = async (req, res) => {
     if (user) {
       res.json({
         success: true,
-        data: user
+        data: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
       });
     } else {
       res.status(404).json({
@@ -164,9 +155,29 @@ const getUserProfile = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error('Profile error:', error);
     res.status(500).json({
       success: false,
       message: 'Error retrieving profile',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Logout user
+// @route   POST /api/auth/logout
+// @access  Public
+const logoutUser = (req, res) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Logout failed',
       error: error.message
     });
   }

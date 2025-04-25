@@ -1,13 +1,49 @@
 import crypto from 'crypto';
+import fs from 'fs/promises';
+import path from 'path';
 
-// Generate a secure random string of 64 bytes and convert to base64
-const generateSecretKey = () => {
-  const secret = crypto.randomBytes(64).toString('base64');
-  console.log('\nGenerated JWT Secret Key:');
-  console.log('------------------------');
-  console.log(secret);
-  console.log('\nAdd this to your .env file as:');
-  console.log('JWT_SECRET=your_generated_key_here\n');
+const generateSecret = () => {
+  // Generate a random 64-byte hex string
+  return crypto.randomBytes(64).toString('hex');
 };
 
-generateSecretKey(); 
+const updateEnvFile = async () => {
+  try {
+    const envPath = path.join(process.cwd(), '.env');
+    const newSecret = generateSecret();
+    
+    let envContent;
+    try {
+      // Try to read existing .env file
+      envContent = await fs.readFile(envPath, 'utf-8');
+    } catch (error) {
+      // If file doesn't exist, start with empty string
+      envContent = '';
+    }
+
+    // Check if JWT_SECRET already exists
+    if (envContent.includes('JWT_SECRET=')) {
+      // Replace existing JWT_SECRET
+      envContent = envContent.replace(
+        /JWT_SECRET=.*/,
+        `JWT_SECRET=${newSecret}`
+      );
+    } else {
+      // Add new JWT_SECRET
+      envContent += `\nJWT_SECRET=${newSecret}`;
+    }
+
+    // Write back to .env file
+    await fs.writeFile(envPath, envContent.trim() + '\n');
+
+    console.log('✅ JWT secret generated successfully!');
+    console.log('🔑 New JWT secret:', newSecret);
+    console.log('📝 Updated .env file');
+  } catch (error) {
+    console.error('❌ Error updating .env file:', error);
+    process.exit(1);
+  }
+};
+
+// Run the script
+updateEnvFile(); 

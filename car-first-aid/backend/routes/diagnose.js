@@ -8,7 +8,10 @@ import {
 
 const router = express.Router();
 
-router.post('/', protect, diagnoseIssue);
+// Public routes
+router.post('/', diagnoseIssue);
+
+// Protected routes (require authentication)
 router.post('/save', protect, saveDiagnosis);
 router.get('/history', protect, getDiagnosisHistory);
 

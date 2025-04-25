@@ -1,7 +1,0 @@
-POST http://127.0.0.1:8000/add_issue
-Content-Type: application/json
-
-{
-  "issue": "engine won't start",
-  "solution": "Check the battery and starter motor."
-}
