@@ -93,10 +93,10 @@ const DiagnosisHistory = () => {
                     <div className="mt-4">
                       <h5 className="font-medium text-blue-100 mb-2">Solutions:</h5>
                       <ul className="list-none space-y-2">
-                        {diagnosis.solutions.map((solution, index) => (
+                        {diagnosis.recommendedActions?.map((action, index) => (
                           <li key={index} className="flex items-start gap-3 text-gray-300">
                             <div className="mt-1 text-blue-400">•</div>
-                            {solution}
+                            {action}
                           </li>
                         ))}
                       </ul>

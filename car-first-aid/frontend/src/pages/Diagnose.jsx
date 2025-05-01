@@ -258,10 +258,10 @@ const Diagnose = () => {
             <div className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50">
               <h3 className="text-xl font-semibold mb-4 text-blue-100">Recommended Solutions</h3>
               <ul className="list-none space-y-3">
-                {diagnosis.solutions.map((solution, index) => (
+                {diagnosis.recommendedActions?.map((action, index) => (
                   <li key={index} className="flex items-start gap-3 text-blue-200">
                     <div className="mt-1 text-blue-400">•</div>
-                    {solution}
+                    {action}
                   </li>
                 ))}
               </ul>

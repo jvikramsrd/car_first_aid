@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { ToastContainer } from 'react-toastify';
@@ -96,13 +96,13 @@ const AppContent = () => {
 // Main App component
 const App = () => {
   return (
-    <Router>
+    <ErrorBoundary>
+      <AuthProvider>
       <ThemeProvider>
-        <AuthProvider>
           <AppContent />
+        </ThemeProvider>
         </AuthProvider>
-      </ThemeProvider>
-    </Router>
+    </ErrorBoundary>
   );
 };
 

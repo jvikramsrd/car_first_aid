@@ -1,54 +1,67 @@
-const notFound = (req, res, next) => {
+import Logger from '../utils/logger.js';
+
+export const notFound = (req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
+  Logger.warn(`Route not found: ${req.originalUrl}`);
   res.status(404);
   next(error);
 };
 
-const errorHandler = (err, req, res, next) => {
-  console.error('Error:', {
+export const errorHandler = (err, req, res, next) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  
+  Logger.error('Error occurred:', {
     message: err.message,
-    stack: err.stack,
-    name: err.name
+    stack: process.env.NODE_ENV === 'development' ? err.stack : null,
+    path: req.path,
+    method: req.method,
+    statusCode: statusCode
   });
 
-  // Handle JWT and auth errors
-  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid or expired token'
-    });
-  }
-
-  // Handle validation errors
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation Error',
-      errors: err.errors
-    });
-  }
-
-  // Handle Hugging Face API errors
-  if (err.message?.includes('API key')) {
-    return res.status(500).json({
-      success: false,
-      message: 'AI service configuration error. Please check the API key.'
-    });
-  }
-
-  if (err.message?.includes('Invalid response')) {
-    return res.status(500).json({
-      success: false,
-      message: 'AI model returned an invalid response'
-    });
-  }
-
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode).json({
-    success: false,
+    status: 'error',
     message: err.message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    stack: process.env.NODE_ENV === 'development' ? err.stack : null,
+    timestamp: new Date().toISOString()
   });
 };
 
-export { notFound, errorHandler }; 
+// Custom error classes
+export class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message) {
+    super(message, 400);
+    this.name = 'ValidationError';
+  }
+}
+
+export class AuthenticationError extends AppError {
+  constructor(message) {
+    super(message, 401);
+    this.name = 'AuthenticationError';
+  }
+}
+
+export class AuthorizationError extends AppError {
+  constructor(message) {
+    super(message, 403);
+    this.name = 'AuthorizationError';
+  }
+}
+
+export class ResourceNotFoundError extends AppError {
+  constructor(message) {
+    super(message, 404);
+    this.name = 'ResourceNotFoundError';
+  }
+} 
