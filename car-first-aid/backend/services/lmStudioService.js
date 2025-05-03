@@ -81,25 +81,27 @@ export class LMStudioService {
   parseResponse(response) {
     try {
       console.log('Raw response from LM Studio:', JSON.stringify(response, null, 2));
-      
       const content = response.choices[0].message.content;
-      
-      // Extract JSON from markdown code blocks
       let jsonContent = content;
+      // Try to extract JSON from code block
       if (content.includes('```')) {
         const matches = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
         if (matches && matches[1]) {
           jsonContent = matches[1].trim();
         }
+      } else {
+        // Try to extract the first {...} block
+        const curlyMatch = content.match(/\{[\s\S]*\}/);
+        if (curlyMatch) {
+          jsonContent = curlyMatch[0];
+        }
       }
-
-      // Clean up any control characters or invalid JSON characters
+      // Clean up control characters
       jsonContent = jsonContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-      
+      // Attempt to repair common JSON issues (trailing commas)
+      jsonContent = jsonContent.replace(/,\s*([}\]])/g, '$1');
       try {
         const parsedContent = JSON.parse(jsonContent);
-        
-        // Ensure all required fields exist with proper formatting
         const formattedResponse = {
           causes: Array.isArray(parsedContent.causes) ? parsedContent.causes : [String(parsedContent.causes || 'Unknown cause')],
           severity: String(parsedContent.severity || 'medium').toLowerCase(),
@@ -109,10 +111,7 @@ export class LMStudioService {
           urgencyLevel: parseInt(parsedContent.urgencyLevel) || 3,
           additionalNotes: String(parsedContent.additionalNotes || '')
         };
-
-        // Validate the formatted response
         this.validateResponse(formattedResponse);
-        
         return formattedResponse;
       } catch (parseError) {
         console.error('Failed to parse JSON content:', parseError);

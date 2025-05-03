@@ -18,23 +18,24 @@ function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => {
+    // Initialize token from localStorage
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      // Set the authorization header immediately if token exists
+      axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+    }
+    return storedToken;
+  });
 
   useEffect(() => {
-    checkAuth();
-  }, [token]);
-
-  const checkAuth = async () => {
-    try {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      // Set default authorization header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
+    const checkAuth = async () => {
       try {
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
         const response = await axios.get(`${API_URL}/auth/profile`);
         if (response.data.success) {
           setUser(response.data.data);
@@ -43,19 +44,19 @@ function AuthProvider({ children }) {
         }
       } catch (err) {
         console.error('Auth check failed:', err);
-        localStorage.removeItem('token');
-        setToken(null);
-        delete axios.defaults.headers.common['Authorization'];
+        // Only clear token if it's an authentication error
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          setToken(null);
+          delete axios.defaults.headers.common['Authorization'];
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Auth check failed:', err);
-      localStorage.removeItem('token');
-      setToken(null);
-      delete axios.defaults.headers.common['Authorization'];
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    checkAuth();
+  }, [token]);
 
   const login = async (email, password) => {
     try {
@@ -128,7 +129,12 @@ function AuthProvider({ children }) {
     login,
     logout,
     register,
-    checkAuth
+    checkAuth: () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken && !token) {
+        setToken(storedToken);
+      }
+    }
   };
 
   return (

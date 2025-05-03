@@ -6,22 +6,30 @@ import Mechanic from '../models/mechanic.js';
 // @access  Public
 const getMechanics = asyncHandler(async (req, res) => {
   const mechanics = await Mechanic.find();
-  res.json(mechanics);
+  res.json({
+    success: true,
+    count: mechanics.length,
+    data: mechanics
+  });
 });
 
 // @desc    Create new mechanic
 // @route   POST /api/mechanics
 // @access  Private
 const createMechanic = asyncHandler(async (req, res) => {
-  const { name, location, specialization } = req.body;
+  const { name, location, specialization, contact } = req.body;
 
   const mechanic = await Mechanic.create({
     name,
     location,
-    specialization
+    specialization,
+    contact
   });
 
-  res.status(201).json(mechanic);
+  res.status(201).json({
+    success: true,
+    data: mechanic
+  });
 });
 
 // @desc    Get nearby mechanics
@@ -32,8 +40,10 @@ const getNearbyMechanics = asyncHandler(async (req, res) => {
     const { longitude, latitude, maxDistance, sortBy, specialty, minRating } = req.query;
 
     if (!longitude || !latitude) {
-      res.status(400);
-      throw new Error('Please provide longitude and latitude');
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide longitude and latitude'
+      });
     }
 
     // Base query for location
@@ -51,7 +61,7 @@ const getNearbyMechanics = asyncHandler(async (req, res) => {
 
     // Add specialty filter if provided
     if (specialty) {
-      query.specialties = specialty;
+      query.specialization = specialty;
     }
 
     // Add minimum rating filter if provided
@@ -67,10 +77,11 @@ const getNearbyMechanics = asyncHandler(async (req, res) => {
         case 'rating':
           mechanics.sort((a, b) => b.rating - a.rating);
           break;
-        case 'reviewCount':
-          mechanics.sort((a, b) => b.reviewCount - a.reviewCount);
+        case 'distance':
+          // Already sorted by $near
           break;
-        // Default is distance (already sorted by $near)
+        default:
+          // Default is distance (already sorted by $near)
       }
     }
 
@@ -80,10 +91,11 @@ const getNearbyMechanics = asyncHandler(async (req, res) => {
       data: mechanics
     });
   } catch (error) {
-    console.error(error);
+    console.error('Error getting nearby mechanics:', error);
     res.status(500).json({
       success: false,
-      message: 'Server Error'
+      message: 'Error getting nearby mechanics',
+      error: error.message
     });
   }
 });

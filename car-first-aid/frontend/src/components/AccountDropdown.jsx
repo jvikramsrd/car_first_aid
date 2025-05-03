@@ -62,7 +62,7 @@ const AccountDropdown = () => {
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-gray-700/80 transition-colors duration-300"
+            className="w-full flex items-center gap-3 px-4 py-2 text-[#e57373] hover:bg-gray-700/80 transition-colors duration-300"
           >
             <FaSignOutAlt />
             Logout

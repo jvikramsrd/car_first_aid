@@ -1,37 +1,61 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { toast } from 'react-toastify';
+import { motion } from 'framer-motion';
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  }
+};
 
 const Register = () => {
-  const navigate = useNavigate();
-  const { register, error: authError } = useAuth();
-  const { theme } = useTheme();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    agreeToTerms: false
+    confirmPassword: ''
   });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { login } = useAuth();
+  const { theme } = useTheme();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
-    // Clear error when user starts typing
-    if (error) setError(null);
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    setError(null);
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -39,216 +63,210 @@ const Register = () => {
       return;
     }
 
-    if (!formData.agreeToTerms) {
-      setError('Please agree to the Terms and Conditions');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const userData = {
+      const response = await axios.post(`${API_URL}/auth/register`, {
         name: formData.name,
         email: formData.email,
         password: formData.password
-      };
-      
-      const success = await register(userData);
-      if (success) {
-        toast.success('Registration successful!');
+      });
+
+      if (response.data.success) {
+        login(response.data.data);
         navigate('/');
       } else {
-        setError(authError || 'Registration failed');
+        setError(response.data.message || 'Registration failed');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during registration');
+      console.error('Registration error:', err);
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={`min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 relative overflow-hidden ${
-      theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900'
-        : 'bg-gradient-to-br from-blue-50 via-gray-50 to-blue-50'
-    }`}>
-      {/* Racing stripe inspired decorative elements */}
-      <div className={`absolute inset-0 ${
-        theme === 'dark'
-          ? 'opacity-10'
-          : 'opacity-5'
-      }`}>
-        <div className="absolute right-0 top-0 w-96 h-full transform rotate-12 translate-x-32 bg-gradient-to-b from-red-500 to-red-600"></div>
-        <div className="absolute right-0 top-0 w-96 h-full transform rotate-12 translate-x-48 bg-gradient-to-b from-blue-500 to-blue-600"></div>
-      </div>
-      <div className="w-full max-w-md relative">
-        <div className={`p-8 rounded-xl shadow-lg border backdrop-blur-xl ${
-          theme === 'dark'
-            ? 'bg-gray-800/80 border-gray-700'
-            : 'bg-white/90 border-gray-200'
-        }`}>
-          <h1 className={`text-3xl font-bold mb-6 text-center ${
-            theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
-          }`}>
-            Create Account
-          </h1>
+    <motion.div 
+      className={`min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 ${theme === 'dark' ? 'bg-gray-900' : 'bg-[#f7f7fa]'}`}
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div 
+        className={`max-w-md w-full space-y-8 p-8 rounded-2xl shadow-xl ${theme === 'dark' ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-[#ececec]'} border`}
+        variants={itemVariants}
+      >
+        <div>
+          <motion.h2 
+            className={`text-center text-3xl font-extrabold ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Create your account
+          </motion.h2>
+          <motion.p 
+            className={`mt-2 text-center text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-[#6b7280]'}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Or{' '}
+            <Link 
+              to="/login" 
+              className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
+            >
+              sign in to your account
+            </Link>
+          </motion.p>
+        </div>
 
+        <motion.form 
+          className="mt-8 space-y-6"
+          onSubmit={handleSubmit}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6">
+            <motion.div 
+              className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
               {error}
-            </div>
+            </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className={`block text-sm font-medium mb-2 ${
-                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-              }`}>
+          <div className="rounded-md shadow-sm space-y-4">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <label htmlFor="name" className={`block text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-gray-700'}`}>
                 Full Name
               </label>
               <input
-                type="text"
                 id="name"
                 name="name"
+                type="text"
+                required
                 value={formData.name}
                 onChange={handleChange}
-                className={`w-full p-3 rounded-xl border focus:ring-2 outline-none transition-all duration-300 ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400/30 focus:ring-blue-400/20'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500/30 focus:ring-blue-500/20'
+                className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
+                    : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
                 placeholder="Enter your full name"
-                required
               />
-            </div>
+            </motion.div>
 
-            <div>
-              <label htmlFor="email" className={`block text-sm font-medium mb-2 ${
-                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-              }`}>
-                Email Address
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <label htmlFor="email" className={`block text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-gray-700'}`}>
+                Email address
               </label>
               <input
-                type="email"
                 id="email"
                 name="email"
+                type="email"
+                autoComplete="email"
+                required
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full p-3 rounded-xl border focus:ring-2 outline-none transition-all duration-300 ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400/30 focus:ring-blue-400/20'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500/30 focus:ring-blue-500/20'
+                className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
+                    : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
                 placeholder="Enter your email"
-                required
               />
-            </div>
+            </motion.div>
 
-            <div>
-              <label htmlFor="password" className={`block text-sm font-medium mb-2 ${
-                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-              }`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <label htmlFor="password" className={`block text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-gray-700'}`}>
                 Password
               </label>
               <input
-                type="password"
                 id="password"
                 name="password"
+                type="password"
+                required
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full p-3 rounded-xl border focus:ring-2 outline-none transition-all duration-300 ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400/30 focus:ring-blue-400/20'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500/30 focus:ring-blue-500/20'
+                className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
+                    : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
-                placeholder="Create a password"
-                required
+                placeholder="Enter your password"
               />
-            </div>
+            </motion.div>
 
-            <div>
-              <label htmlFor="confirmPassword" className={`block text-sm font-medium mb-2 ${
-                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-              }`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <label htmlFor="confirmPassword" className={`block text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-gray-700'}`}>
                 Confirm Password
               </label>
               <input
-                type="password"
                 id="confirmPassword"
                 name="confirmPassword"
+                type="password"
+                required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`w-full p-3 rounded-xl border focus:ring-2 outline-none transition-all duration-300 ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400/30 focus:ring-blue-400/20'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500/30 focus:ring-blue-500/20'
+                className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
+                    : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
                 placeholder="Confirm your password"
-                required
               />
-            </div>
+            </motion.div>
+          </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="agreeToTerms"
-                name="agreeToTerms"
-                checked={formData.agreeToTerms}
-                onChange={handleChange}
-                className={`h-4 w-4 rounded border focus:ring-2 ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-400/20'
-                    : 'bg-white border-gray-300 text-blue-600 focus:ring-blue-500/20'
-                }`}
-                required
-              />
-              <label htmlFor="agreeToTerms" className={`ml-2 block text-sm ${
-                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-              }`}>
-                I agree to the{' '}
-                <Link 
-                  to="/terms" 
-                  className={theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}
-                >
-                  Terms of Service
-                </Link>
-                {' '}and{' '}
-                <Link 
-                  to="/privacy" 
-                  className={theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}
-                >
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-
-            <button
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+          >
+            <motion.button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors duration-300 disabled:opacity-50"
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white ${
+                theme === 'dark' 
+                  ? 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' 
+                  : 'bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {loading ? "Creating account..." : "Create Account"}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
-              Already have an account?{" "}
-              <Link 
-                to="/login" 
-                className={`font-medium ${
-                  theme === 'dark'
-                    ? 'text-blue-400 hover:text-blue-300'
-                    : 'text-blue-600 hover:text-blue-500'
-                }`}
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+              {loading ? (
+                <motion.div 
+                  className="h-5 w-5 border-2 border-white border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+              ) : (
+                'Create Account'
+              )}
+            </motion.button>
+          </motion.div>
+        </motion.form>
+      </motion.div>
+    </motion.div>
   );
 };
 

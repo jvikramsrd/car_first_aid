@@ -52,7 +52,7 @@ const MechanicsMap = ({ mechanics = [], onSelectMechanic }) => {
         
         marker.bindPopup(`
           <b>${mechanic.name}</b><br>
-          ${mechanic.specialties.join(', ')}<br>
+          ${mechanic.specialization.join(', ')}<br>
           Rating: ${mechanic.rating}/5
         `);
         

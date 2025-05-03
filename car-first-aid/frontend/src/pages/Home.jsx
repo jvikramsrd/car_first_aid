@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FaCarCrash, FaTools, FaMapMarkerAlt, FaShieldAlt, FaHeadset } from "react-icons/fa";
 import { useTheme } from "../context/ThemeContext";
+import { motion } from "framer-motion";
 
 const Home = () => {
   const { theme } = useTheme();
@@ -35,48 +36,48 @@ const Home = () => {
   ];
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-[#f7f7fa]'}`}>
       {/* Hero Section */}
-      <div className="relative min-h-[80vh] flex items-center">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className={`relative min-h-[80vh] flex items-center ${theme === 'dark' ? '' : 'bg-white rounded-2xl shadow-md border border-[#ececec]'}`}
+      >
         <div className={`absolute inset-0 ${
           theme === 'dark'
             ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700'
-            : 'bg-gradient-to-br from-blue-50 via-white to-gray-100'
+            : 'bg-none'
         }`}>
-          <div className={`absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#3b82f6_0%,_transparent_60%)] ${
-            theme === 'dark' ? 'opacity-10' : 'opacity-20'
-          }`}></div>
-          <div className={`absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_#60a5fa_0%,_transparent_60%)] ${
-            theme === 'dark' ? 'opacity-10' : 'opacity-20'
-          }`}></div>
+          {/* Remove gradients in light mode */}
         </div>
         <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="md:w-1/2">
               <h1 className={`text-5xl md:text-7xl font-bold mb-6 leading-tight ${
-                theme === 'dark' ? 'text-blue-100' : 'text-gray-900'
-              }`}>
+                theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'
+              }`} style={theme !== 'dark' ? {background: 'none', WebkitTextFillColor: 'unset', textShadow: 'none'} : {}}>
                 CAR TROUBLE?<br />
                 WE'VE GOT YOU COVERED
               </h1>
               <p className={`text-xl mb-8 ${
-                theme === 'dark' ? 'text-blue-200' : 'text-gray-600'
+                theme === 'dark' ? 'text-blue-200' : 'text-[#6b7280]'
               }`}>
                 From diagnosis to repair, CarFirstAid provides complete solutions to get you back on the road safely.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link 
                   to="/diagnose" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-center transition-all duration-300 text-lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-center transition-all duration-300 text-lg shadow-sm"
                 >
                   Diagnose Now
                 </Link>
                 <Link 
                   to="/mechanics" 
-                  className={`font-bold py-4 px-8 rounded-lg text-center transition-all duration-300 text-lg border ${
+                  className={`font-bold py-4 px-8 rounded-lg text-center transition-all duration-300 text-lg border shadow-sm ${
                     theme === 'dark'
                       ? 'bg-gray-800 hover:bg-gray-700 text-blue-300 border-blue-400/30'
-                      : 'bg-white hover:bg-gray-50 text-blue-600 border-blue-200'
+                      : 'bg-white hover:bg-gray-50 text-blue-600 border-[#ececec]'
                   }`}
                 >
                   Find Mechanics
@@ -88,27 +89,35 @@ const Home = () => {
                 src="/123.webp" 
                 alt="Car assistance" 
                 className={`rounded-2xl shadow-2xl w-full max-w-lg mx-auto border ${
-                  theme === 'dark' ? 'border-blue-900' : 'border-blue-200'
+                  theme === 'dark' ? 'border-blue-900' : 'border-[#ececec]'
                 }`}
               />
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Features Section */}
-      <div className={`py-20 ${
-        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-      }`}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className={`py-20 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+      >
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             {features.map((feature, index) => (
-              <div 
-                key={index} 
-                className={`p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group ${
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5 + index * 0.1, ease: 'easeOut' }}
+                className={`p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group shadow-sm ${
                   theme === 'dark'
                     ? 'bg-gray-800/50 border-gray-700 hover:border-blue-400/30'
-                    : 'bg-white border-gray-200 hover:border-blue-400'
+                    : 'bg-white border-[#ececec] hover:border-blue-400'
                 }`}
               >
                 <div className="text-center">
@@ -116,26 +125,28 @@ const Home = () => {
                     {feature.icon}
                   </div>
                   <h3 className={`text-xl font-semibold mb-3 ${
-                    theme === 'dark' ? 'text-blue-200' : 'text-gray-900'
+                    theme === 'dark' ? 'text-blue-200' : 'text-[#23272f]'
                   }`}>{feature.title}</h3>
                   <p className={
-                    theme === 'dark' ? 'text-blue-300' : 'text-gray-600'
+                    theme === 'dark' ? 'text-blue-300' : 'text-[#6b7280]'
                   }>{feature.description}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Testimonials Section */}
-      <div className={`py-16 ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
-      }`}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className={`py-16 ${theme === 'dark' ? 'bg-gray-900' : 'bg-[#f7f7fa]'}`}
+      >
         <div className="container mx-auto px-6">
-          <h2 className={`text-3xl font-bold text-center mb-12 ${
-            theme === 'dark' ? 'text-blue-100' : 'text-gray-900'
-          }`}>
+          <h2 className={`text-3xl font-bold text-center mb-12 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>
             What Our Users Say
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -153,8 +164,12 @@ const Home = () => {
                 author: "Lisa M."
               }
             ].map((testimonial, index) => (
-              <div 
-                key={index} 
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5 + index * 0.1, ease: 'easeOut' }}
                 className={`p-6 rounded-xl border transition-all duration-300 ${
                   theme === 'dark'
                     ? 'bg-gray-800 border-gray-700 hover:border-blue-400/30'
@@ -162,36 +177,35 @@ const Home = () => {
                 }`}
               >
                 <p className={`italic mb-4 ${
-                  theme === 'dark' ? 'text-blue-200' : 'text-gray-600'
+                  theme === 'dark' ? 'text-blue-200' : 'text-[#6b7280]'
                 }`}>"{testimonial.quote}"</p>
                 <p className="font-semibold text-blue-400">— {testimonial.author}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Call to Action */}
-      <div className={`py-16 relative overflow-hidden ${
-        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-      }`}>
-        <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,_#3b82f6_0%,_transparent_70%)] ${
-          theme === 'dark' ? 'opacity-10' : 'opacity-20'
-        }`}></div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className={`py-16 relative overflow-hidden ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+      >
         <div className="container mx-auto px-6 text-center relative z-10">
-          <h2 className={`text-3xl font-bold mb-6 ${
-            theme === 'dark' ? 'text-blue-100' : 'text-gray-900'
-          }`}>
+          <h2 className={`text-3xl font-bold mb-6 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>
             Ready to Solve Your Car Problems?
           </h2>
           <Link 
             to="/diagnose" 
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300"
+            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 shadow-sm"
           >
             Get Started Now
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

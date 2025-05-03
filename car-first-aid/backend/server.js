@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.js';
 import partsRoutes from './routes/parts.js';
 import cors from 'cors';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import diagnosisRoutes from './routes/diagnosisRoutes.js';
 
 dotenv.config();
 
@@ -76,6 +77,7 @@ app.use('/api/mechanics', mechanicsRoutes);
 app.use('/api/towing', towingRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/parts', partsRoutes);
+app.use('/api/diagnosis', diagnosisRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

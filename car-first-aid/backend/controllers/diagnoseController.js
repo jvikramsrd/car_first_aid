@@ -1,11 +1,11 @@
 import asyncHandler from 'express-async-handler';
-import CarIssue from '../models/carIssue.js';
+import Diagnosis from '../models/diagnosis.js';
 
 // @desc    Get all diagnoses
 // @route   GET /api/diagnoses
 // @access  Public
 const getDiagnoses = asyncHandler(async (req, res) => {
-  const diagnoses = await CarIssue.find();
+  const diagnoses = await Diagnosis.find();
   res.json(diagnoses);
 });
 
@@ -13,13 +13,16 @@ const getDiagnoses = asyncHandler(async (req, res) => {
 // @route   POST /api/diagnoses
 // @access  Public
 const createDiagnosis = asyncHandler(async (req, res) => {
-  const { symptom, possibleCauses, severity, recommendedAction } = req.body;
+  const { symptom, details, severity, causes, solutions, carDetails } = req.body;
 
-  const diagnosis = await CarIssue.create({
+  const diagnosis = await Diagnosis.create({
+    user: req.user._id,
     symptom,
-    possibleCauses,
+    details,
     severity,
-    recommendedAction
+    causes,
+    solutions,
+    carDetails
   });
 
   res.status(201).json(diagnosis);
@@ -28,46 +31,30 @@ const createDiagnosis = asyncHandler(async (req, res) => {
 // @desc    Save AI diagnosis
 // @route   POST /api/ai-diagnose
 // @access  Public
-const saveAiDiagnosis = asyncHandler(async (userId, diagnosisData) => {
+const saveAiDiagnosis = asyncHandler(async (req, res) => {
   try {
-    console.log('Attempting to save AI diagnosis:', JSON.stringify(diagnosisData, null, 2));
+    const { symptom, details, carDetails, aiResponse, severity, causes, solutions } = req.body;
 
-    if (!diagnosisData || !diagnosisData.symptom || !diagnosisData.details || !diagnosisData.carDetails) {
-      console.error('Invalid diagnosis data:', diagnosisData);
-      throw new Error('Invalid diagnosis data');
-    }
-
-    // Create a new diagnosis document
-    const diagnosis = new CarIssue({
-      user: userId, // This can be null for anonymous diagnoses
-      symptom: diagnosisData.symptom,
-      details: diagnosisData.details,
-      carDetails: diagnosisData.carDetails,
-      aiResponse: diagnosisData.aiResponse,
+    const diagnosis = await Diagnosis.create({
+      user: req.user._id,
+      symptom,
+      details,
+      carDetails,
+      aiResponse,
       isAiGenerated: true,
-      severity: 'medium', // Default severity
-      possibleCauses: [], // Will be parsed from AI response
-      recommendedAction: '', // Will be parsed from AI response
-      timestamp: new Date()
+      severity,
+      causes,
+      solutions
     });
 
-    // Validate the document before saving
-    const validationError = diagnosis.validateSync();
-    if (validationError) {
-      console.error('Validation error:', validationError);
-      throw new Error('Invalid diagnosis data format');
-    }
-
-    // Save the document
-    const savedDiagnosis = await diagnosis.save();
-    console.log('Successfully saved diagnosis:', savedDiagnosis);
-    return savedDiagnosis;
+    res.status(201).json(diagnosis);
   } catch (error) {
     console.error('Error saving AI diagnosis:', error);
-    if (error.name === 'ValidationError') {
-      throw new Error('Invalid diagnosis data format: ' + error.message);
-    }
-    throw error;
+    res.status(500).json({
+      success: false,
+      message: 'Error saving AI diagnosis',
+      error: error.message
+    });
   }
 });
 
@@ -75,17 +62,16 @@ const saveAiDiagnosis = asyncHandler(async (userId, diagnosisData) => {
 // @route   POST /api/diagnose
 // @access  Public
 const diagnoseIssue = asyncHandler(async (req, res) => {
-  const { symptom, details, carDetails, location } = req.body;
+  const { symptom, details, carDetails } = req.body;
   
-  const diagnosis = await CarIssue.create({
-    user: null, // Allow anonymous diagnoses
+  const diagnosis = await Diagnosis.create({
+    user: req.user?._id || null,
     symptom,
     details,
     carDetails,
-    location,
     severity: 'medium',
-    possibleCauses: [],
-    recommendedAction: ''
+    causes: [],
+    solutions: []
   });
 
   res.status(201).json(diagnosis);
@@ -95,7 +81,19 @@ const diagnoseIssue = asyncHandler(async (req, res) => {
 // @route   POST /api/diagnose/save
 // @access  Private
 const saveDiagnosis = asyncHandler(async (req, res) => {
-  // Your save logic here
+  const { symptom, details, severity, causes, solutions, carDetails } = req.body;
+
+  const diagnosis = await Diagnosis.create({
+    user: req.user._id,
+    symptom,
+    details,
+    severity,
+    causes,
+    solutions,
+    carDetails
+  });
+
+  res.status(201).json(diagnosis);
 });
 
 // @desc    Get diagnosis history for a user
@@ -103,11 +101,14 @@ const saveDiagnosis = asyncHandler(async (req, res) => {
 // @access  Private
 const getDiagnosisHistory = asyncHandler(async (req, res) => {
   try {
-    const diagnoses = await CarIssue.find({ user: req.user._id })
-      .sort({ timestamp: -1 }) // Sort by newest first
-      .select('-__v'); // Exclude version key
+    const diagnoses = await Diagnosis.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .select('-__v');
 
-    res.json(diagnoses);
+    res.status(200).json({
+      success: true,
+      data: diagnoses
+    });
   } catch (error) {
     console.error('Error fetching diagnosis history:', error);
     res.status(500).json({

@@ -160,7 +160,7 @@ const Navbar = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="mt-3 w-full flex justify-center px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors duration-300"
+                  className="mt-3 w-full flex justify-center px-4 py-2 rounded-md text-sm font-medium text-white bg-[#e57373] hover:bg-[#ef9a9a] transition-colors duration-300"
                 >
                   Logout
                 </button>

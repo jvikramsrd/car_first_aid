@@ -1,135 +1,183 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
-import { FaCarCrash, FaTools, FaCalendar, FaCar } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { FaCarCrash, FaTools, FaTruck, FaCheckCircle, FaExclamationTriangle, FaBolt, FaThermometerHalf, FaCog, FaQuestion } from "react-icons/fa";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const DiagnosisHistory = () => {
-  const { user } = useAuth();
-  const [history, setHistory] = useState([]);
+  const { user, token } = useAuth();
+  const { theme } = useTheme();
+  const [diagnosisHistory, setDiagnosisHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchDiagnosisHistory = async () => {
+      if (!user) {
+        setError("Please login to view diagnosis history");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await axios.get(`${API_URL}/diagnoses/history/${user._id}`);
+        const response = await axios.get(`${API_URL}/diagnose/history`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
         if (response.data.success) {
-          setHistory(response.data.data);
+          setDiagnosisHistory(response.data.data);
         } else {
-          setError("Failed to fetch diagnosis history");
+          setError(response.data.message || "Failed to fetch diagnosis history");
         }
       } catch (err) {
-        console.error("History fetch error:", err);
-        setError("Error loading diagnosis history");
+        console.error("Error fetching diagnosis history:", err);
+        setError("Failed to fetch diagnosis history. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
-      fetchHistory();
+    fetchDiagnosisHistory();
+  }, [user, token]);
+
+  const getSeverityColor = (severity) => {
+    switch (severity?.toLowerCase()) {
+      case 'high':
+        return 'text-[#e57373]';
+      case 'medium':
+        return 'text-yellow-500';
+      case 'low':
+        return 'text-green-500';
+      default:
+        return 'text-text';
     }
-  }, [user]);
+  };
+
+  if (!user) {
+    return (
+      <div className={`container mx-auto px-6 py-12 ${theme === 'dark' ? '' : 'bg-[#f7f7fa]'}`}>
+        <div className={`backdrop-blur-xl p-8 rounded-2xl shadow-xl border ${theme === 'dark' ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-[#ececec]'}`}>
+          <h2 className={`text-3xl font-bold mb-8 text-center ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>
+            Please login to view your diagnosis history
+          </h2>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className={`container mx-auto px-6 py-12 ${theme === 'dark' ? '' : 'bg-[#f7f7fa]'}`}>
+        <div className={`backdrop-blur-xl p-8 rounded-2xl shadow-xl border ${theme === 'dark' ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-[#ececec]'}`}>
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-6 py-12">
-      <h1 className="text-4xl font-bold mb-8 text-center">
-        <span className="text-white">Diagnosis</span>
+    <div className={`container mx-auto px-6 py-12 ${theme === 'dark' ? '' : 'bg-[#f7f7fa]'}`}>
+      <h1 className={`text-5xl font-bold mb-12 text-center ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}> 
+        <span className={theme === 'dark' ? 'text-white' : 'text-[#23272f]'}>Diagnosis</span>
         <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent"> History</span>
       </h1>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-300 p-4 rounded-xl mb-8">
+        <div className="bg-[#ffeaea] border border-[#e57373] text-[#b71c1c] p-4 rounded-xl mb-8 backdrop-blur-md">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6">
-        {history.map((diagnosis) => (
-          <div
-            key={diagnosis._id}
-            className="bg-gray-800/90 backdrop-blur-xl p-6 rounded-xl shadow-lg border border-gray-700/50 hover:border-blue-400/30 transition-all duration-300"
-          >
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 rounded-lg bg-blue-500/10">
-                    <FaCarCrash className="text-2xl text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{diagnosis.symptom}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <FaCalendar />
-                        {new Date(diagnosis.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FaCar />
-                        {diagnosis.carDetails.make} {diagnosis.carDetails.model} ({diagnosis.carDetails.year})
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="bg-gray-900/80 p-4 rounded-lg border border-gray-700/50">
-                    <h4 className="text-lg font-semibold text-blue-100 mb-2">Problem Description</h4>
-                    <p className="text-gray-300">{diagnosis.details}</p>
-                  </div>
-                  
-                  <div className="bg-gray-900/80 p-4 rounded-lg border border-gray-700/50">
-                    <h4 className="text-lg font-semibold text-blue-100 mb-2">Diagnosis</h4>
-                    <p className="text-gray-300">{diagnosis.problem}</p>
-                    <div className="mt-4">
-                      <h5 className="font-medium text-blue-100 mb-2">Solutions:</h5>
-                      <ul className="list-none space-y-2">
-                        {diagnosis.recommendedActions?.map((action, index) => (
-                          <li key={index} className="flex items-start gap-3 text-gray-300">
-                            <div className="mt-1 text-blue-400">•</div>
-                            {action}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+      {diagnosisHistory.length === 0 ? (
+        <div className={`backdrop-blur-xl p-8 rounded-2xl shadow-xl border ${theme === 'dark' ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-[#ececec]'}`}>
+          <h2 className={`text-3xl font-bold mb-8 text-center ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>
+            No diagnosis history found
+          </h2>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {diagnosisHistory.map((diagnosis) => (
+            <div key={diagnosis._id} className={`backdrop-blur-xl p-8 rounded-2xl shadow-xl border ${theme === 'dark' ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-[#ececec]'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>
+                  {diagnosis.symptom}
+                </h3>
+                <div className="flex items-center gap-4">
+                  <span className={`text-lg font-semibold ${getSeverityColor(diagnosis.severity)}`}>
+                    {diagnosis.severity.toUpperCase()}
+                  </span>
+                  {diagnosis.carDetails && (
+                    <span className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-gray-500'}`}>
+                      {diagnosis.carDetails.make} {diagnosis.carDetails.model} ({diagnosis.carDetails.year})
+                    </span>
+                  )}
                 </div>
               </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>Problem Description</h4>
+                  <p className={`${theme === 'dark' ? 'text-blue-200' : 'text-gray-700'}`}>{diagnosis.details}</p>
+                </div>
 
-              <div className="flex flex-row md:flex-col gap-4 md:w-48">
-                <button
-                  onClick={() => window.location.href = `/diagnose?id=${diagnosis._id}`}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors duration-300"
-                >
-                  <FaTools />
-                  Re-Diagnose
-                </button>
+                <div>
+                  <h4 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>Possible Causes</h4>
+                  <ul className="list-disc pl-6 space-y-2">
+                    {diagnosis.causes.map((cause, idx) => (
+                      <li key={idx} className={`${theme === 'dark' ? 'text-blue-200' : 'text-gray-700'}`}>
+                        {cause}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>Recommended Solutions</h4>
+                  <ul className="list-disc pl-6 space-y-2">
+                    {diagnosis.solutions.map((solution, idx) => (
+                      <li key={idx} className={`${theme === 'dark' ? 'text-blue-200' : 'text-gray-700'}`}>
+                        {solution}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {diagnosis.estimatedCost && (
+                  <div>
+                    <h4 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>Estimated Cost</h4>
+                    <p className={`${theme === 'dark' ? 'text-blue-200' : 'text-gray-700'}`}>{diagnosis.estimatedCost}</p>
+                  </div>
+                )}
+
+                {diagnosis.safetyImplications && (
+                  <div>
+                    <h4 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>Safety Implications</h4>
+                    <p className={`${theme === 'dark' ? 'text-blue-200' : 'text-gray-700'}`}>{diagnosis.safetyImplications}</p>
+                  </div>
+                )}
+
+                <div className="pt-4 flex justify-between items-center">
+                  <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-gray-500'}`}>
+                    Diagnosed on: {new Date(diagnosis.createdAt).toLocaleString()}
+                  </p>
+                  <button
+                    onClick={() => window.location.href = `/diagnose?id=${diagnosis._id}`}
+                    className={`px-4 py-2 rounded-xl ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
+                  >
+                    Re-Diagnose
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-
-        {history.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-lg">No diagnosis history found</div>
-            <button
-              onClick={() => window.location.href = '/diagnose'}
-              className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors duration-300"
-            >
-              Start New Diagnosis
-            </button>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,9 +1,15 @@
 import { LMStudioService } from '../services/lmStudioService.js';
 import { saveAiDiagnosis } from './diagnoseController.js';
+import axios from 'axios';
+import asyncHandler from 'express-async-handler';
+import Diagnosis from '../models/diagnosis.js';
 
 // LM Studio configuration
 const LM_STUDIO_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234/v1';
 const LM_STUDIO_MODEL = process.env.LM_STUDIO_MODEL || 'local-model';
+
+const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
+const HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn";
 
 // Local knowledge base for fallback
 const carDiagnosisKnowledge = {
@@ -501,4 +507,82 @@ const validateRequest = (body) => {
   }
 
   return errors;
-}; 
+};
+
+const aiDiagnose = asyncHandler(async (req, res) => {
+  const { symptom, details, carDetails } = req.body;
+
+  if (!symptom || !details) {
+    res.status(400);
+    throw new Error('Please provide symptom and details');
+  }
+
+  try {
+    // Prepare the prompt for the AI model
+    const prompt = `Car Problem Diagnosis:
+Symptom: ${symptom}
+Details: ${details}
+Car Details: ${carDetails.make} ${carDetails.model} (${carDetails.year})
+
+Please analyze this car problem and provide:
+1. Severity level (low, medium, high)
+2. Possible causes
+3. Recommended solutions`;
+
+    // Make request to Hugging Face API
+    const response = await axios.post(
+      HUGGING_FACE_API_URL,
+      { inputs: prompt },
+      {
+        headers: {
+          'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Parse the AI response
+    const aiResponse = response.data[0].generated_text;
+    const severity = aiResponse.toLowerCase().includes('high') ? 'high' : 
+                    aiResponse.toLowerCase().includes('medium') ? 'medium' : 'low';
+    
+    const causes = aiResponse.split('\n')
+      .filter(line => line.toLowerCase().includes('cause'))
+      .map(line => line.replace(/^\d+\.\s*/, '').trim());
+    
+    const solutions = aiResponse.split('\n')
+      .filter(line => line.toLowerCase().includes('solution'))
+      .map(line => line.replace(/^\d+\.\s*/, '').trim());
+
+    // Create and save the diagnosis
+    const diagnosis = await Diagnosis.create({
+      user: req.user._id,
+      symptom,
+      details,
+      severity,
+      causes,
+      solutions,
+      carDetails
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        problem: symptom,
+        severity,
+        causes,
+        solutions,
+        diagnosisId: diagnosis._id
+      }
+    });
+
+  } catch (error) {
+    console.error('AI Diagnosis Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error performing AI diagnosis'
+    });
+  }
+});
+
+export { aiDiagnose }; 
