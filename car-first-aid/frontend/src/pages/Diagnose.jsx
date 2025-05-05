@@ -101,16 +101,11 @@ const Diagnose = () => {
 
     try {
       const response = await axios.post(
-        `${API_URL}/diagnose`,
+        `${API_URL}/ai-diagnose`,
         {
-          symptom: selectedIssue.name,
+          symptom: "CUSTOM ISSUE",
           details: problemDetails,
           carDetails
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
         }
       );
 
