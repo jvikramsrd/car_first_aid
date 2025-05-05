@@ -69,7 +69,7 @@ const Register = () => {
         email: formData.email,
         password: formData.password
       });
-
+      
       if (response.data.success) {
         login(response.data.data);
         navigate('/');
@@ -118,7 +118,7 @@ const Register = () => {
               sign in to your account
             </Link>
           </motion.p>
-        </div>
+      </div>
 
         <motion.form 
           className="mt-8 space-y-6"
@@ -155,7 +155,7 @@ const Register = () => {
                 value={formData.name}
                 onChange={handleChange}
                 className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
-                  theme === 'dark' 
+                  theme === 'dark'
                     ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
                     : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
@@ -180,7 +180,7 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
-                  theme === 'dark' 
+                  theme === 'dark'
                     ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
                     : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
@@ -204,7 +204,7 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
-                  theme === 'dark' 
+                  theme === 'dark'
                     ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
                     : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
@@ -228,20 +228,20 @@ const Register = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
-                  theme === 'dark' 
+                  theme === 'dark'
                     ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
                     : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
                 placeholder="Confirm your password"
               />
             </motion.div>
-          </div>
+            </div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
-          >
+                >
             <motion.button
               type="submit"
               disabled={loading}

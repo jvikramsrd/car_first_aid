@@ -206,7 +206,7 @@ const Account = () => {
               </p>
             </div>
           </motion.div>
-        </div>
+      </div>
       </motion.div>
 
       {/* Past Diagnoses Section */}
@@ -249,10 +249,10 @@ const Account = () => {
           </motion.div>
         ) : (
           <AnimatePresence>
-            <div className="space-y-6">
+          <div className="space-y-6">
               {pastDiagnoses.map((diagnosis, index) => (
                 <motion.div
-                  key={diagnosis._id}
+                key={diagnosis._id}
                   className={`p-6 rounded-xl border transition-all duration-300 ${
                     theme === 'dark' 
                       ? 'bg-gray-800/90 border-gray-700/50 hover:border-blue-400/30' 
@@ -263,16 +263,16 @@ const Account = () => {
                   animate="visible"
                   whileHover="hover"
                   transition={{ delay: index * 0.1 }}
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
                       <motion.h3 
                         className={`text-xl font-semibold mb-2 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 }}
                       >
-                        {diagnosis.symptom}
+                      {diagnosis.symptom}
                       </motion.h3>
                       <motion.p 
                         className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-gray-500'}`}
@@ -292,14 +292,14 @@ const Account = () => {
                           {diagnosis.carDetails.make} {diagnosis.carDetails.model} ({diagnosis.carDetails.year})
                         </motion.p>
                       )}
-                    </div>
+                  </div>
                     <motion.span 
                       className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(diagnosis.severity)}`}
                       initial={{ opacity: 0, scale: 0.5 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.5 }}
                     >
-                      {diagnosis.severity?.toUpperCase() || 'UNKNOWN'} Severity
+                    {diagnosis.severity?.toUpperCase() || 'UNKNOWN'} Severity
                     </motion.span>
                   </div>
 
@@ -309,10 +309,10 @@ const Account = () => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6 }}
                   >
-                    <div>
+                  <div>
                       <h4 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-blue-100' : 'text-[#23272f]'}`}>Problem Description</h4>
                       <p className={`${theme === 'dark' ? 'text-blue-200' : 'text-gray-700'}`}>{diagnosis.details}</p>
-                    </div>
+                </div>
 
                     {diagnosis.causes && diagnosis.causes.length > 0 && (
                       <motion.div
@@ -355,10 +355,10 @@ const Account = () => {
                             >
                               {solution}
                             </motion.li>
-                          ))}
-                        </ul>
+                      ))}
+                    </ul>
                       </motion.div>
-                    )}
+                )}
 
                     {diagnosis.estimatedCost && (
                       <motion.div
@@ -403,8 +403,8 @@ const Account = () => {
                     </motion.div>
                   </motion.div>
                 </motion.div>
-              ))}
-            </div>
+            ))}
+          </div>
           </AnimatePresence>
         )}
       </motion.div>

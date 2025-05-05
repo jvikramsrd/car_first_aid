@@ -6,7 +6,7 @@ import Diagnosis from '../models/diagnosis.js';
 
 // LM Studio configuration
 const LM_STUDIO_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234/v1';
-const LM_STUDIO_MODEL = process.env.LM_STUDIO_MODEL || 'local-model';
+const LM_STUDIO_MODEL = process.env.LM_STUDIO_MODEL || 'gemma-3-4b-it-qat';
 
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 const HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn";
@@ -368,121 +368,138 @@ const handleDiagnosisResponse = async (req, res, diagnosis, isLocalFallback) => 
 };
 
 // Main diagnosis function
-export const generateAIDiagnosis = async (req, res) => {
+export const generateAIDiagnosis = asyncHandler(async (req, res) => {
   try {
-    console.log('Received request body:', JSON.stringify(req.body, null, 2));
-    
-    // Validate request
-    const validationErrors = validateRequest(req.body);
-    if (validationErrors.length > 0) {
-      console.error('Validation errors:', validationErrors);
+    const { symptom, details, carDetails } = req.body;
+
+    // Validate required fields
+    if (!symptom || !details || !carDetails) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: validationErrors
+        message: 'Missing required fields: symptom, details, or carDetails'
       });
     }
 
-    const { symptom, details, carDetails } = req.body;
-    
-    console.log('Processing request for:', {
-      symptom,
-      details,
-      carMake: carDetails.make,
-      carModel: carDetails.model,
-      carYear: carDetails.year
-    });
-
-    try {
-      // Prepare the prompt for LM Studio
-      const prompt = `As an expert automotive technician, analyze this car issue:
-
-Car Details:
-- Make: ${carDetails.make}
-- Model: ${carDetails.model}
-- Year: ${carDetails.year}
-
-Problem:
-- Symptom: ${symptom}
-- Additional Details: ${details}
-
-Please provide a detailed analysis including:
-1. Most likely causes (list 3-5 specific causes)
-2. Severity level (low/medium/high)
-3. Required actions (step-by-step recommendations)
-4. Estimated repair costs (range in USD)
-5. Safety implications
-6. Urgency level (1-5, where 5 is most urgent)
-
-Format the response as a JSON object with these exact keys:
-{
-  "causes": ["array of specific causes"],
-  "severity": "low/medium/high",
-  "solutions": ["array of detailed step-by-step solutions"],
-  "estimatedCost": "cost range in USD",
-  "safetyImplications": "detailed safety implications",
-  "urgencyLevel": number between 1-5,
-  "additionalNotes": "any additional relevant information"
-}`;
-
-      // Call LM Studio service
-      const aiResponse = await lmStudioService.generateDiagnosis(prompt);
-      
-      // Combine AI response with local analysis
-      const detailAnalysis = analyzeDetails(details, symptom);
-      
-      const diagnosis = {
-        problem: symptom,
-        causes: [...aiResponse.causes, ...detailAnalysis.additionalCauses],
-        severity: aiResponse.severity,
-        solutions: [...aiResponse.solutions, ...detailAnalysis.additionalSolutions],
-        estimatedCost: aiResponse.estimatedCost,
-        safetyImplications: aiResponse.safetyImplications,
-        urgencyLevel: aiResponse.urgencyLevel,
-        additionalNotes: aiResponse.additionalNotes,
-        detailAnalysis: detailAnalysis.analysis,
-        carDetails: {
-          make: carDetails.make,
-          model: carDetails.model,
-          year: carDetails.year
-        }
-      };
-
-      return handleDiagnosisResponse(req, res, diagnosis, false);
-
-    } catch (aiError) {
-      console.error('AI diagnosis error:', aiError);
-      console.log('Falling back to local diagnosis');
-      
-      // Use local diagnosis as fallback
-      const localDiagnosis = generateLocalDiagnosis(symptom, details, carDetails);
-      
-      // Ensure the local diagnosis has all required fields
-      const fallbackDiagnosis = {
-        problem: symptom,
-        causes: localDiagnosis.causes || [],
-        severity: localDiagnosis.severity || 'medium',
-        solutions: localDiagnosis.solutions || [],
-        estimatedCost: localDiagnosis.estimatedCost || 'Unknown',
-        safetyImplications: localDiagnosis.safetyImplications || 'Unknown',
-        urgencyLevel: 3,
-        additionalNotes: 'Generated using local fallback system',
-        detailAnalysis: localDiagnosis.detailAnalysis || [],
-        carDetails: localDiagnosis.carDetails || carDetails
-      };
-
-      return handleDiagnosisResponse(req, res, fallbackDiagnosis, true);
+    if (!carDetails.make || !carDetails.model || !carDetails.year) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required car details: make, model, or year'
+      });
     }
 
-  } catch (err) {
-    console.error('Diagnosis error:', err);
-    return res.status(500).json({
+    console.log('Starting AI diagnosis process...');
+    console.log('Input:', { symptom, details, carDetails });
+
+    // Try to get AI diagnosis first
+    let diagnosis = null;
+    try {
+      // Create the prompt for LM Studio
+      const prompt = `You are an expert automotive technician. Analyze this car problem and provide a detailed diagnosis in JSON format:
+
+Problem: ${symptom}
+Details: ${details}
+Car: ${carDetails.make} ${carDetails.model} ${carDetails.year}
+
+Required JSON format:
+{
+  "causes": ["list of specific possible causes"],
+  "severity": "low/medium/high",
+  "solutions": ["list of detailed step-by-step solutions"],
+  "estimatedCost": "cost range in USD",
+  "safetyImplications": "detailed safety impact description"
+}
+
+Provide a comprehensive diagnosis based on the specific car make, model, and year.`;
+
+      console.log('Attempting to get AI diagnosis from LM Studio...');
+      const aiResponse = await lmStudioService.generateDiagnosis(prompt);
+      console.log('Successfully received AI diagnosis:', aiResponse);
+
+      if (aiResponse) {
+        diagnosis = {
+          problem: symptom,
+          causes: Array.isArray(aiResponse.causes) ? aiResponse.causes : [aiResponse.causes],
+          severity: aiResponse.severity || 'medium',
+          solutions: Array.isArray(aiResponse.solutions) ? aiResponse.solutions : [aiResponse.solutions],
+          estimatedCost: aiResponse.estimatedCost || 'Unknown',
+          safetyImplications: aiResponse.safetyImplications || 'Unknown',
+          carDetails: {
+            make: carDetails.make,
+            model: carDetails.model,
+            year: carDetails.year
+          },
+          isAiGenerated: true
+        };
+      }
+    } catch (aiError) {
+      console.error('Failed to get AI diagnosis:', aiError);
+    }
+
+    // Only use local diagnosis if AI diagnosis failed
+    if (!diagnosis) {
+      console.log('AI diagnosis failed, falling back to local diagnosis...');
+      const localDiagnosis = generateLocalDiagnosis(symptom, details, carDetails);
+      diagnosis = {
+        ...localDiagnosis,
+        isAiGenerated: false
+      };
+    }
+
+    console.log('Final diagnosis:', diagnosis);
+
+    // Save diagnosis if user is authenticated
+    if (req.user) {
+      try {
+        const savedDiagnosis = await Diagnosis.create({
+          user: req.user._id,
+          symptom,
+          details,
+          carDetails,
+          diagnosis: JSON.stringify(diagnosis),
+          timestamp: new Date(),
+          isAiGenerated: diagnosis.isAiGenerated
+        });
+        console.log('Diagnosis saved successfully:', savedDiagnosis._id);
+      } catch (saveError) {
+        console.error('Error saving diagnosis:', saveError);
+        // Continue even if save fails
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: diagnosis
+    });
+
+  } catch (error) {
+    console.error('AI Diagnosis error:', error);
+    
+    // Check if it's a connection error
+    if (error.message.includes('ECONNREFUSED') || error.message.includes('Failed to fetch')) {
+      return res.status(503).json({
+        success: false,
+        message: 'LM Studio service is not running. Please start LM Studio and try again.',
+        error: error.message
+      });
+    }
+
+    // Check if it's a response parsing error
+    if (error.message.includes('Invalid JSON format') || error.message.includes('Invalid response format')) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error processing AI response. Please try again.',
+        error: error.message
+      });
+    }
+
+    // Default error response
+    res.status(500).json({
       success: false,
-      message: 'Diagnosis failed',
-      error: err.message
+      message: 'Error generating AI diagnosis',
+      error: error.message
     });
   }
-};
+});
 
 // Validation helper
 const validateRequest = (body) => {

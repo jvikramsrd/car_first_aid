@@ -29,12 +29,12 @@ function AuthProvider({ children }) {
   });
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        if (!token) {
-          setLoading(false);
-          return;
-        }
+  const checkAuth = async () => {
+    try {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
         const response = await axios.get(`${API_URL}/auth/profile`);
         if (response.data.success) {
@@ -46,14 +46,14 @@ function AuthProvider({ children }) {
         console.error('Auth check failed:', err);
         // Only clear token if it's an authentication error
         if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          setToken(null);
-          delete axios.defaults.headers.common['Authorization'];
-        }
-      } finally {
-        setLoading(false);
+        localStorage.removeItem('token');
+        setToken(null);
+        delete axios.defaults.headers.common['Authorization'];
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
     checkAuth();
   }, [token]);

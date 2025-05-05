@@ -1,16 +1,26 @@
-import fetch from 'node-fetch';
-import { lmStudioConfig } from '../config/lmStudioConfig.js';
+import axios from 'axios';
+import { LM_STUDIO_URL, LM_STUDIO_MODEL } from '../config/lmStudioConfig.js';
 
 export class LMStudioService {
   constructor() {
-    this.config = lmStudioConfig;
-    this.retryCount = 0;
+    this.baseUrl = LM_STUDIO_URL;
+    this.model = LM_STUDIO_MODEL;
+    console.log('LM Studio Service initialized with:', {
+      baseUrl: this.baseUrl,
+      model: this.model
+    });
   }
 
   async generateDiagnosis(prompt) {
     try {
+      console.log('Making request to LM Studio...');
       const response = await this.makeRequest(prompt);
-      return this.parseResponse(response);
+      console.log('Raw response from LM Studio:', response);
+      
+      const parsedResponse = this.parseResponse(response);
+      console.log('Parsed response:', parsedResponse);
+      
+      return parsedResponse;
     } catch (error) {
       console.error('LM Studio service error:', error);
       throw error;
@@ -19,138 +29,106 @@ export class LMStudioService {
 
   async makeRequest(prompt) {
     try {
-      // Prepare the request body
+      // First check if LM Studio is reachable
+      try {
+        await axios.get(this.baseUrl);
+        console.log('LM Studio server is reachable');
+      } catch (error) {
+        console.error('LM Studio server is not reachable:', error.message);
+        throw new Error('LM Studio server is not reachable. Please ensure it is running.');
+      }
+
       const requestBody = {
-        model: this.config.model,
-        messages: [
-          {
-            role: "system",
-            content: this.config.systemPrompt
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: this.config.temperature,
-        max_tokens: this.config.maxTokens,
+        model: this.model,
+        prompt: prompt,
+        temperature: 0.7,
+        max_tokens: 1000,
+        stop: ["\n\n", "Human:", "Assistant:"],
         stream: false
       };
 
-      console.log('Sending request to LM Studio:', JSON.stringify(requestBody, null, 2));
+      console.log('Making request to LM Studio with body:', JSON.stringify(requestBody, null, 2));
+      console.log('Request URL:', `${this.baseUrl}/v1/completions`);
 
-      const response = await fetch(this.config.url + '/v1/chat/completions', {
-        method: 'POST',
+      const response = await axios.post(`${this.baseUrl}/v1/completions`, requestBody, {
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestBody)
+        timeout: 30000 // 30 second timeout
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('LM Studio API error details:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText
-        });
-        throw new Error(`LM Studio API error: ${response.statusText} - ${errorText}`);
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      console.log('Response data:', JSON.stringify(response.data, null, 2));
+
+      if (!response.data || !response.data.choices || !response.data.choices[0]) {
+        console.error('Invalid response format:', response.data);
+        throw new Error('Invalid response format from LM Studio');
       }
 
-      const result = await response.json();
-      
-      if (!result.choices || !result.choices[0] || !result.choices[0].message) {
-        console.error('Invalid LM Studio response:', JSON.stringify(result, null, 2));
-        throw new Error('Invalid response structure from LM Studio');
-      }
-
-      return result;
+      const text = response.data.choices[0].text;
+      console.log('Extracted text from response:', text);
+      return text;
     } catch (error) {
       console.error('LM Studio request error:', error);
-      if (this.retryCount < this.config.retryAttempts) {
-        this.retryCount++;
-        console.log(`Retrying LM Studio request (attempt ${this.retryCount}/${this.config.retryAttempts})...`);
-        await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * this.retryCount));
-        return this.makeRequest(prompt);
+      
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('Failed to connect to LM Studio. Please ensure LM Studio is running.');
       }
+      
+      if (error.response) {
+        console.error('LM Studio error response:', error.response.data);
+        throw new Error(`LM Studio API error: ${error.response.data.error || error.message}`);
+      }
+      
       throw error;
     }
   }
 
   parseResponse(response) {
     try {
-      console.log('Raw response from LM Studio:', JSON.stringify(response, null, 2));
-      const content = response.choices[0].message.content;
-      let jsonContent = content;
-      // Try to extract JSON from code block
-      if (content.includes('```')) {
-        const matches = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
-        if (matches && matches[1]) {
-          jsonContent = matches[1].trim();
-        }
-      } else {
-        // Try to extract the first {...} block
-        const curlyMatch = content.match(/\{[\s\S]*\}/);
-        if (curlyMatch) {
-          jsonContent = curlyMatch[0];
-        }
+      console.log('Parsing response:', response);
+      
+      // Extract JSON from the response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('No JSON found in response:', response);
+        throw new Error('No JSON found in response');
       }
-      // Clean up control characters
-      jsonContent = jsonContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-      // Attempt to repair common JSON issues (trailing commas)
-      jsonContent = jsonContent.replace(/,\s*([}\]])/g, '$1');
-      try {
-        const parsedContent = JSON.parse(jsonContent);
-        const formattedResponse = {
-          causes: Array.isArray(parsedContent.causes) ? parsedContent.causes : [String(parsedContent.causes || 'Unknown cause')],
-          severity: String(parsedContent.severity || 'medium').toLowerCase(),
-          solutions: Array.isArray(parsedContent.solutions) ? parsedContent.solutions : [String(parsedContent.solutions || 'Consult a professional mechanic')],
-          estimatedCost: String(parsedContent.estimatedCost || 'Unknown'),
-          safetyImplications: String(parsedContent.safetyImplications || 'Unknown - professional inspection recommended'),
-          urgencyLevel: parseInt(parsedContent.urgencyLevel) || 3,
-          additionalNotes: String(parsedContent.additionalNotes || '')
-        };
-        this.validateResponse(formattedResponse);
-        return formattedResponse;
-      } catch (parseError) {
-        console.error('Failed to parse JSON content:', parseError);
-        console.error('Raw content:', jsonContent);
-        throw new Error('Invalid JSON format in LM Studio response');
+
+      const jsonStr = jsonMatch[0];
+      console.log('Extracted JSON string:', jsonStr);
+
+      const parsed = JSON.parse(jsonStr);
+      console.log('Parsed JSON:', parsed);
+
+      // Validate required fields
+      const requiredFields = ['causes', 'severity', 'solutions', 'estimatedCost', 'safetyImplications'];
+      const missingFields = requiredFields.filter(field => !parsed[field]);
+
+      if (missingFields.length > 0) {
+        console.error('Missing required fields:', missingFields);
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
       }
+
+      // Validate field types
+      if (!Array.isArray(parsed.causes)) {
+        parsed.causes = [parsed.causes];
+      }
+      if (!Array.isArray(parsed.solutions)) {
+        parsed.solutions = [parsed.solutions];
+      }
+
+      // Validate severity
+      const validSeverities = ['low', 'medium', 'high'];
+      if (!validSeverities.includes(parsed.severity.toLowerCase())) {
+        parsed.severity = 'medium';
+      }
+
+      return parsed;
     } catch (error) {
-      console.error('Failed to parse LM Studio response:', error);
-      throw new Error('Invalid response format from LM Studio');
+      console.error('Response parsing error:', error);
+      throw new Error(`Failed to parse LM Studio response: ${error.message}`);
     }
-  }
-
-  validateResponse(response) {
-    const requiredFields = [
-      'causes',
-      'severity',
-      'solutions',
-      'estimatedCost',
-      'safetyImplications',
-      'urgencyLevel'
-    ];
-
-    const defaultValues = {
-      causes: ['Unknown cause'],
-      severity: 'medium',
-      solutions: ['Consult a professional mechanic'],
-      estimatedCost: 'Varies - professional diagnosis needed',
-      safetyImplications: 'Unknown - professional inspection recommended',
-      urgencyLevel: 3
-    };
-
-    // Ensure all required fields exist with valid values
-    for (const field of requiredFields) {
-      if (!response[field]) {
-        console.warn(`Missing field in response: ${field}, using default value`);
-        response[field] = defaultValues[field];
-      }
-    }
-
-    return true;
   }
 } 

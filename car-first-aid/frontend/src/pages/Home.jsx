@@ -121,7 +121,7 @@ const Home = () => {
                 }`}
               >
                 <div className="text-center">
-                  <div className="mb-6 transform group-hover:scale-110 transition-transform duration-300">
+                  <div className="mb-6 transform group-hover:scale-110 transition-transform duration-300 flex justify-center">
                     {feature.icon}
                   </div>
                   <h3 className={`text-xl font-semibold mb-3 ${

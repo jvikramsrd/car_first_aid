@@ -51,7 +51,7 @@ const Login = () => {
       });
 
       if (response.data.success) {
-        login(response.data.data);
+        await login(email, password);
         navigate('/');
       } else {
         setError(response.data.message || 'Login failed');
@@ -98,7 +98,7 @@ const Login = () => {
               create a new account
             </Link>
           </motion.p>
-        </div>
+      </div>
 
         <motion.form 
           className="mt-8 space-y-6"
@@ -136,7 +136,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
-                  theme === 'dark' 
+                  theme === 'dark'
                     ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
                     : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
@@ -161,20 +161,20 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`mt-1 block w-full px-4 py-3 rounded-xl border ${
-                  theme === 'dark' 
+                  theme === 'dark'
                     ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500' 
                     : 'border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500'
                 }`}
                 placeholder="Enter your password"
               />
             </motion.div>
-          </div>
+            </div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
-          >
+              >
             <motion.button
               type="submit"
               disabled={loading}

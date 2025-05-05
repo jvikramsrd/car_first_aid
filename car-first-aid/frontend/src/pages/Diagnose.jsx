@@ -100,43 +100,74 @@ const Diagnose = () => {
     setError(null);
 
     try {
+      // Validate required fields
+      if (!problemDetails.trim()) {
+        setError("Please provide details about the problem");
+        setLoading(false);
+        return;
+      }
+
+      if (!carDetails.make || !carDetails.model || !carDetails.year) {
+        setError("Please provide complete car details");
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.post(
         `${API_URL}/ai-diagnose`,
         {
-          symptom: "CUSTOM ISSUE",
+          symptom: selectedIssue?.name || "CUSTOM ISSUE",
           details: problemDetails,
-          carDetails
+          carDetails: {
+            make: carDetails.make,
+            model: carDetails.model,
+            year: carDetails.year
+          }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
       );
 
       if (response.data.success) {
         setDiagnosis(response.data.data);
         
-        // Save the diagnosis to history
-        try {
-          await axios.post(
-            `${API_URL}/diagnosis`,
-            {
-              symptom: selectedIssue.name,
+        // Save the diagnosis to history if user is logged in
+        if (token) {
+          try {
+            const diagnosisData = {
+              symptom: selectedIssue?.name || "CUSTOM ISSUE",
               details: problemDetails,
-              severity: response.data.data.severity,
-              causes: response.data.data.causes,
-              solutions: response.data.data.solutions,
-              carDetails,
-              aiResponse: response.data.data.aiResponse,
-              isAiGenerated: true,
-              estimatedCost: response.data.data.estimatedCost,
-              safetyImplications: response.data.data.safetyImplications
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`
+              severity: response.data.data.severity || 'medium',
+              causes: response.data.data.causes || ['Unknown'],
+              solutions: response.data.data.solutions || ['Consult a mechanic'],
+              carDetails: {
+                make: carDetails.make,
+                model: carDetails.model,
+                year: carDetails.year
+              },
+              estimatedCost: response.data.data.estimatedCost || 'Unknown',
+              safetyImplications: response.data.data.safetyImplications || 'Unknown',
+              urgencyLevel: response.data.data.urgencyLevel || 3,
+              additionalNotes: response.data.data.additionalNotes || ''
+            };
+
+            await axios.post(
+              `${API_URL}/diagnosis`,
+              diagnosisData,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
               }
-            }
-          );
-        } catch (saveError) {
-          console.error('Error saving diagnosis:', saveError);
-          // Don't show error to user as this is a background operation
+            );
+          } catch (saveError) {
+            console.error('Error saving diagnosis:', saveError.response?.data || saveError.message);
+            // Don't show error to user as this is a background operation
+          }
         }
         
         setStep(3);
@@ -145,7 +176,13 @@ const Diagnose = () => {
       }
     } catch (err) {
       console.error("Error diagnosing issue:", err);
-      setError("Failed to diagnose issue. Please try again later.");
+      if (err.response?.status === 503) {
+        setError("AI service is currently unavailable. Please try again later.");
+      } else if (err.response?.status === 500) {
+        setError("Error processing your request. Please try again.");
+      } else {
+        setError("Failed to diagnose issue. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
