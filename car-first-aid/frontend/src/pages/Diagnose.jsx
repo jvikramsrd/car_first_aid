@@ -130,46 +130,10 @@ const Diagnose = () => {
           }
         }
       );
+      console.log("API Response:", response.data); // Debug log
 
       if (response.data.success) {
-        setDiagnosis(response.data.data);
-        
-        // Save the diagnosis to history if user is logged in
-        if (token) {
-          try {
-            const diagnosisData = {
-              symptom: selectedIssue?.name || "CUSTOM ISSUE",
-              details: problemDetails,
-              severity: response.data.data.severity || 'medium',
-              causes: response.data.data.causes || ['Unknown'],
-              solutions: response.data.data.solutions || ['Consult a mechanic'],
-              carDetails: {
-                make: carDetails.make,
-                model: carDetails.model,
-                year: carDetails.year
-              },
-              estimatedCost: response.data.data.estimatedCost || 'Unknown',
-              safetyImplications: response.data.data.safetyImplications || 'Unknown',
-              urgencyLevel: response.data.data.urgencyLevel || 3,
-              additionalNotes: response.data.data.additionalNotes || ''
-            };
-
-            await axios.post(
-              `${API_URL}/diagnosis`,
-              diagnosisData,
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              }
-            );
-          } catch (saveError) {
-            console.error('Error saving diagnosis:', saveError.response?.data || saveError.message);
-            // Don't show error to user as this is a background operation
-          }
-        }
-        
+        setDiagnosis({ ...response.data.data, isAiGenerated: true });
         setStep(3);
       } else {
         setError(response.data.message || "Failed to diagnose issue");
@@ -406,107 +370,114 @@ const Diagnose = () => {
               Diagnosis Results
             </motion.h2>
             <div className="space-y-6">
-              <motion.div 
-                className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2 text-blue-100">Issue</h3>
-                    <p className="text-blue-200">{selectedIssue.name}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(diagnosis.severity)}`}>
-                    {diagnosis.severity?.toUpperCase() || 'UNKNOWN'} Severity
-                  </span>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <h3 className="text-xl font-semibold mb-4 text-blue-100">Problem Description</h3>
-                <p className="text-blue-200">{problemDetails}</p>
-              </motion.div>
-
-              {diagnosis.causes && diagnosis.causes.length > 0 && (
+              {diagnosis ? (
+                <>
+                  <motion.div 
+                    className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-2 text-blue-100">Issue</h3>
+                        <p className="text-blue-200">{selectedIssue.name}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(diagnosis.severity)}`}>
+                        {diagnosis.severity?.toUpperCase() || 'UNKNOWN'} Severity
+                      </span>
+                    </div>
+                  </motion.div>
+                  <motion.div 
+                    className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <h3 className="text-xl font-semibold mb-4 text-blue-100">Problem Description</h3>
+                    <p className="text-blue-200">{problemDetails}</p>
+                  </motion.div>
+                  {diagnosis.causes && diagnosis.causes.length > 0 && (
+                    <motion.div 
+                      className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <h3 className="text-xl font-semibold mb-4 text-blue-100">Possible Causes</h3>
+                      <ul className="list-none space-y-3">
+                        {diagnosis.causes.map((cause, index) => (
+                          <motion.li 
+                            key={index} 
+                            className="flex items-start gap-3 text-blue-200"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5 + index * 0.1 }}
+                          >
+                            <div className="mt-1 text-blue-400">•</div>
+                            {cause}
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  )}
+                  {diagnosis.solutions && diagnosis.solutions.length > 0 && (
+                    <motion.div 
+                      className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                    >
+                      <h3 className="text-xl font-semibold mb-4 text-blue-100">Recommended Solutions</h3>
+                      <ul className="list-none space-y-3">
+                        {diagnosis.solutions.map((solution, index) => (
+                          <motion.li 
+                            key={index} 
+                            className="flex items-start gap-3 text-blue-200"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.7 + index * 0.1 }}
+                          >
+                            <div className="mt-1 text-blue-400">•</div>
+                            {solution}
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  )}
+                  {diagnosis.estimatedCost && (
+                    <motion.div 
+                      className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.8 }}
+                    >
+                      <h3 className="text-xl font-semibold mb-4 text-blue-100">Estimated Cost</h3>
+                      <p className="text-blue-200">{diagnosis.estimatedCost}</p>
+                    </motion.div>
+                  )}
+                  {diagnosis.safetyImplications && (
+                    <motion.div 
+                      className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.9 }}
+                    >
+                      <h3 className="text-xl font-semibold mb-4 text-blue-100">Safety Implications</h3>
+                      <p className="text-blue-200">{diagnosis.safetyImplications}</p>
+                    </motion.div>
+                  )}
+                </>
+              ) : (
                 <motion.div 
-                  className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
+                  className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50 text-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <h3 className="text-xl font-semibold mb-4 text-blue-100">Possible Causes</h3>
-                  <ul className="list-none space-y-3">
-                    {diagnosis.causes.map((cause, index) => (
-                      <motion.li 
-                        key={index} 
-                        className="flex items-start gap-3 text-blue-200"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 + index * 0.1 }}
-                      >
-                        <div className="mt-1 text-blue-400">•</div>
-                        {cause}
-                      </motion.li>
-                    ))}
-                  </ul>
+                  <p className="text-blue-200">No diagnosis available. Please try again.</p>
                 </motion.div>
               )}
-
-              {diagnosis.solutions && diagnosis.solutions.length > 0 && (
-                <motion.div 
-                  className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  <h3 className="text-xl font-semibold mb-4 text-blue-100">Recommended Solutions</h3>
-                  <ul className="list-none space-y-3">
-                    {diagnosis.solutions.map((solution, index) => (
-                      <motion.li 
-                        key={index} 
-                        className="flex items-start gap-3 text-blue-200"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.7 + index * 0.1 }}
-                      >
-                        <div className="mt-1 text-blue-400">•</div>
-                        {solution}
-                      </motion.li>
-                    ))}
-                  </ul>
-                </motion.div>
-              )}
-
-              {diagnosis.estimatedCost && (
-                <motion.div 
-                  className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  <h3 className="text-xl font-semibold mb-4 text-blue-100">Estimated Cost</h3>
-                  <p className="text-blue-200">{diagnosis.estimatedCost}</p>
-                </motion.div>
-              )}
-
-              {diagnosis.safetyImplications && (
-                <motion.div 
-                  className="bg-gray-900/90 p-6 rounded-xl border border-gray-700/50"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.9 }}
-                >
-                  <h3 className="text-xl font-semibold mb-4 text-blue-100">Safety Implications</h3>
-                  <p className="text-blue-200">{diagnosis.safetyImplications}</p>
-                </motion.div>
-              )}
-
               <motion.div 
                 className="flex flex-col sm:flex-row gap-4 pt-4"
                 initial={{ opacity: 0 }}

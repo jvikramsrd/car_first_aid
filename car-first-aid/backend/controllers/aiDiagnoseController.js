@@ -392,6 +392,8 @@ export const generateAIDiagnosis = asyncHandler(async (req, res) => {
 
     // Try to get AI diagnosis first
     let diagnosis = null;
+    let isLocalFallback = false;
+
     try {
       // Create the prompt for LM Studio
       const prompt = `You are an expert automotive technician. Analyze this car problem and provide a detailed diagnosis in JSON format:
@@ -413,26 +415,40 @@ Provide a comprehensive diagnosis based on the specific car make, model, and yea
 
       console.log('Attempting to get AI diagnosis from LM Studio...');
       const aiResponse = await lmStudioService.generateDiagnosis(prompt);
-      console.log('Successfully received AI diagnosis:', aiResponse);
+      console.log('Raw AI Response:', aiResponse);
 
-      if (aiResponse) {
-        diagnosis = {
-          problem: symptom,
-          causes: Array.isArray(aiResponse.causes) ? aiResponse.causes : [aiResponse.causes],
-          severity: aiResponse.severity || 'medium',
-          solutions: Array.isArray(aiResponse.solutions) ? aiResponse.solutions : [aiResponse.solutions],
-          estimatedCost: aiResponse.estimatedCost || 'Unknown',
-          safetyImplications: aiResponse.safetyImplications || 'Unknown',
-          carDetails: {
-            make: carDetails.make,
-            model: carDetails.model,
-            year: carDetails.year
-          },
-          isAiGenerated: true
-        };
+      if (aiResponse && typeof aiResponse === 'object') {
+        // Validate the AI response structure
+        if (Array.isArray(aiResponse.causes) && 
+            Array.isArray(aiResponse.solutions) && 
+            typeof aiResponse.severity === 'string') {
+          
+          diagnosis = {
+            problem: symptom,
+            causes: aiResponse.causes,
+            severity: aiResponse.severity,
+            solutions: aiResponse.solutions,
+            estimatedCost: aiResponse.estimatedCost || 'Unknown',
+            safetyImplications: aiResponse.safetyImplications || 'Unknown',
+            carDetails: {
+              make: carDetails.make,
+              model: carDetails.model,
+              year: carDetails.year
+            },
+            isAiGenerated: true
+          };
+          console.log('Successfully parsed AI diagnosis:', diagnosis);
+        } else {
+          console.error('Invalid AI response structure:', aiResponse);
+          throw new Error('Invalid AI response structure');
+        }
+      } else {
+        console.error('Invalid AI response:', aiResponse);
+        throw new Error('Invalid AI response');
       }
     } catch (aiError) {
       console.error('Failed to get AI diagnosis:', aiError);
+      isLocalFallback = true;
     }
 
     // Only use local diagnosis if AI diagnosis failed
@@ -457,7 +473,7 @@ Provide a comprehensive diagnosis based on the specific car make, model, and yea
           carDetails,
           diagnosis: JSON.stringify(diagnosis),
           timestamp: new Date(),
-          isAiGenerated: diagnosis.isAiGenerated
+          isAiGenerated: !isLocalFallback
         });
         console.log('Diagnosis saved successfully:', savedDiagnosis._id);
       } catch (saveError) {

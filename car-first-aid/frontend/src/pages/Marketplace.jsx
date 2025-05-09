@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaSearch, FaFilter, FaShoppingCart, FaStar, FaTools, FaSprayCan, FaCog } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { useTheme } from "../context/ThemeContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -10,7 +12,16 @@ const categories = [
   { id: 'tools', name: 'Essential Tools', icon: <FaTools /> }
 ];
 
+const sampleProducts = [
+  { id: 1, name: "Car Battery", price: 120, description: "High-performance car battery for reliable starting power." },
+  { id: 2, name: "Oil Filter", price: 15, description: "Premium oil filter for optimal engine protection." },
+  { id: 3, name: "Brake Pads", price: 45, description: "Durable brake pads for safe and efficient braking." },
+  { id: 4, name: "Air Filter", price: 20, description: "Clean air filter for improved engine performance." },
+  { id: 5, name: "Spark Plugs", price: 30, description: "High-quality spark plugs for better fuel efficiency." }
+];
+
 const Marketplace = () => {
+  const { theme } = useTheme();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -163,37 +174,19 @@ const Marketplace = () => {
       )}
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map(product => (
-          <div
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sampleProducts.map(product => (
+          <motion.div
             key={product.id}
-            className="bg-gray-800/90 backdrop-blur-xl rounded-xl border border-gray-700/50 hover:border-blue-400/30 transition-all duration-300 overflow-hidden"
+            className={`p-6 rounded-xl border ${theme === 'dark' ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-[#ececec]'}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-white mb-2">{product.name}</h3>
-              <p className="text-gray-400 text-sm mb-4">{product.description}</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-blue-400 font-bold">${product.price}</span>
-                  <div className="flex items-center text-yellow-400">
-                    <FaStar />
-                    <span className="ml-1 text-sm">{product.rating}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => addToCart(product)}
-                  className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300"
-                >
-                  <FaShoppingCart />
-                </button>
-              </div>
-            </div>
-          </div>
+            <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
+            <p className="text-gray-600 mb-4">{product.description}</p>
+            <p className="text-blue-600 font-bold">${product.price}</p>
+          </motion.div>
         ))}
       </div>
 
